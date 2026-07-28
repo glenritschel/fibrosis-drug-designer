@@ -198,9 +198,13 @@ class FibrosisSelectivity(Scene):
         l2 = Text("Tissue localization is.", font_size=44, color=GOOD, weight=BOLD)
         grp = VGroup(l1, l2).arrange(DOWN, buff=0.28)
         self.play(Write(grp), run_time=1.6)
-        cta = Text("interactive tool + open source  →  github.com/<your-handle>/fibrosis-drug-designer",
-                   font_size=24, color=MUTED)
-        cta.next_to(grp, DOWN, buff=0.7)
-        self.play(FadeIn(cta, shift=UP * 0.2), run_time=0.9)
+        cta = Text("interactive tool + open source  →  github.com/glenritschel/fibrosis-drug-designer",
+                   font_size=23, color=MUTED)
+        cta.next_to(grp, DOWN, buff=0.6)
+        credit = Text("Built in collaboration with Claude (Anthropic)",
+                      font_size=19, color=MUTED)
+        credit.next_to(cta, DOWN, buff=0.3)
+        self.play(FadeIn(cta, shift=UP * 0.2), run_time=0.8)
+        self.play(FadeIn(credit, shift=UP * 0.15), run_time=0.6)
         self.wait(2.2)
-        self.play(FadeOut(grp), FadeOut(cta), run_time=0.8)
+        self.play(FadeOut(grp), FadeOut(cta), FadeOut(credit), run_time=0.8)

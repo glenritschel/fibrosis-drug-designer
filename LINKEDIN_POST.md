@@ -24,7 +24,9 @@ I turned the whole causal map (drug → targets → tissues → outcomes) into a
 (It's a conceptual model — illustrative weights, not validated potencies — built to make the trade-off *legible*, not to rank real compounds.)
 
 ▶️ [video]
-🔗 Tool + code: github.com/<your-handle>/fibrosis-drug-designer
+🔗 Tool + code: github.com/glenritschel/fibrosis-drug-designer
+
+Built in collaboration with Claude — it did the analysis, coding, and animation from my direction.
 
 Curious what the drug-delivery and translational crowd thinks: is localization an underrated design axis?
 

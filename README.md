@@ -71,4 +71,6 @@ program decision.
 
 MIT — see [`LICENSE`](LICENSE).
 
-Built by Glen Ritschel (Ritschel Research), 2026.
+Built by Glen Ritschel (Ritschel Research), in collaboration with Claude (Anthropic), 2026.
+
+Repo: https://github.com/glenritschel/fibrosis-drug-designer
