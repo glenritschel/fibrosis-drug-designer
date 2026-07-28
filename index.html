@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Anti-Fibrotic Placeholder Drug Designer</title>
+<style>
+  :root{
+    --bg:#ffffff; --panel:#f5f7fa; --panel2:#eef2f7; --node:#ffffff; --nodeStroke:#d8dee7;
+    --ink:#161b22; --muted:#5b6470; --grid:#e6ebf1;
+    --ther:#0072b2; --anti:#c0562a; --tissue:#7a8595;
+    --serious:#c4392f; --moderate:#dd9a1f; --low:#6b7480; --benefit:#2f9e44;
+  }
+  body.dark{
+    --bg:#11161d; --panel:#1a212b; --panel2:#222c37; --node:#232c38; --nodeStroke:#39424f;
+    --ink:#e8edf3; --muted:#9aa6b2; --grid:#2a323d;
+    --ther:#4da6e0; --anti:#e08a5a; --tissue:#96a1ae;
+    --serious:#e56b62; --moderate:#f0c15a; --low:#8a94a1; --benefit:#51cf66;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;
+    background:var(--bg);color:var(--ink);-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1320px;margin:0 auto;padding:20px 20px 60px}
+  h1{font-size:18px;margin:0 0 3px;letter-spacing:-.2px}
+  .sub{font-size:12px;color:var(--muted);margin:0 0 14px;line-height:1.5}
+  .topbar{display:flex;flex-wrap:wrap;gap:14px;align-items:center;background:var(--panel);
+    border:1px solid var(--grid);border-radius:10px;padding:9px 14px;margin-bottom:14px}
+  .lbl{color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.4px;font-size:10px}
+  .modewrap{display:flex;border:1px solid var(--nodeStroke);border-radius:8px;overflow:hidden}
+  .modewrap .btn{border:0;border-radius:0}
+  .btn{padding:5px 12px;border-radius:7px;border:1px solid var(--nodeStroke);background:var(--node);
+    color:var(--ink);cursor:pointer;font-size:12px;font-weight:600}
+  .btn:hover{border-color:var(--muted)}
+  .btn.active{background:var(--ther);color:#fff;border-color:var(--ther)}
+  .btn.opt{border-color:var(--benefit);color:var(--benefit)}
+  .btn.opt:hover{background:var(--benefit);color:#fff;border-color:var(--benefit)}
+  .app{display:flex;gap:16px;align-items:flex-start}
+  .editor{width:290px;flex:none;background:var(--panel);border:1px solid var(--grid);border-radius:10px;padding:14px}
+  .editor h3{font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin:2px 0 8px}
+  .editor .name{width:100%;padding:6px 9px;border:1px solid var(--nodeStroke);border-radius:7px;
+    background:var(--node);color:var(--ink);font-size:13px;font-weight:700;margin-bottom:12px}
+  .tgt{display:flex;align-items:center;gap:8px;padding:5px 7px;border-radius:7px;cursor:pointer;font-size:12.5px;user-select:none}
+  .tgt:hover{background:var(--panel2)}
+  .tgt input{accent-color:var(--ther);width:15px;height:15px}
+  .tgt.anti input{accent-color:var(--anti)}
+  .tgt .eff{margin-left:auto;font-size:10px;color:var(--muted);font-weight:700}
+  .tgt .dot{width:8px;height:8px;border-radius:50%;flex:none}
+  .divider{height:1px;background:var(--grid);margin:12px 0}
+  .loc{display:block;padding:6px 8px;border-radius:7px;cursor:pointer;font-size:12px;margin-bottom:3px;border:1px solid transparent}
+  .loc:hover{background:var(--panel2)}
+  .loc.sel{border-color:var(--ther);background:var(--panel2)}
+  .loc small{display:block;color:var(--muted);font-size:10.5px;margin-top:1px}
+  .canvas{flex:1;min-width:0}
+  .scorestrip{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+  .card{background:var(--panel);border:1px solid var(--grid);border-radius:10px;padding:10px 14px;flex:1;min-width:150px}
+  .card .k{font-size:10px;text-transform:uppercase;letter-spacing:.4px;color:var(--muted);font-weight:700}
+  .card .v{font-size:22px;font-weight:800;margin-top:2px}
+  .bar{height:8px;border-radius:5px;background:var(--panel2);overflow:hidden;margin-top:7px}
+  .bar > i{display:block;height:100%;border-radius:5px}
+  .badge{display:inline-block;padding:2px 9px;border-radius:20px;font-size:12px;font-weight:800;color:#fff}
+  svg{width:100%;height:auto;display:block}
+  .colhead{font-size:10.5px;font-weight:700;fill:var(--muted);text-transform:uppercase;letter-spacing:.5px}
+  .node text{fill:var(--ink);font-size:11.5px}
+  .node .tag{font-size:8.5px;font-weight:700;letter-spacing:.3px}
+  .link{fill:none;stroke-linecap:round}
+  .readout{margin-top:14px;background:var(--panel);border:1px solid var(--grid);border-radius:10px;padding:6px 14px 12px}
+  .readout h3{font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin:10px 0 6px}
+  .ae{display:flex;gap:10px;align-items:flex-start;padding:7px 0;border-top:1px solid var(--grid);font-size:12.5px;line-height:1.45}
+  .ae .sv{width:74px;flex:none;font-weight:800;font-size:10.5px;padding-top:1px}
+  .ae .fix{color:var(--muted);font-size:11.5px}
+  .pill{display:inline-block;padding:0 7px;border-radius:20px;font-size:9.5px;font-weight:800;color:#fff;margin-left:5px;vertical-align:middle}
+  .none{color:var(--benefit);font-weight:700;font-size:13px;padding:8px 0}
+  .expl{background:var(--panel2);border-left:4px solid var(--ther);border-radius:8px;padding:9px 13px;font-size:12.5px;line-height:1.55;margin-bottom:12px}
+  .goalrow{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;font-size:12.5px;margin-bottom:8px}
+  .goalrow label{display:inline-flex;align-items:center;gap:5px;cursor:pointer}
+  .hide{display:none}
+  .foot{font-size:10.5px;color:var(--muted);margin-top:14px;line-height:1.55}
+  .tooltip{position:fixed;pointer-events:none;z-index:20;max-width:250px;background:var(--node);
+    border:1px solid var(--nodeStroke);border-radius:8px;padding:8px 11px;font-size:12px;line-height:1.45;
+    color:var(--ink);box-shadow:0 6px 22px rgba(0,0,0,.18);opacity:0;transition:opacity .1s}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Anti-Fibrotic Placeholder Drug Designer</h1>
+  <p class="sub">Design a hypothetical drug backwards and forwards across the causal map. Pick targets and a delivery localization (forward) — or state the outcome you want and let it design the placeholder (backward). Assumes a placeholder is perfectly selective for whatever it's set to hit.</p>
+
+  <div class="topbar">
+    <span class="lbl">Mode</span>
+    <div class="modewrap">
+      <button class="btn active" id="mFwd">Forward — build a drug</button>
+      <button class="btn" id="mBwd">Backward — from outcome</button>
+    </div>
+    <span class="lbl" style="margin-left:8px">Presets</span>
+    <button class="btn" data-preset="das">Dasatinib-like</button>
+    <button class="btn" data-preset="ideal">Idealized core</button>
+    <button class="btn" data-preset="yaploc">YAP · localized</button>
+    <span class="lbl" style="margin-left:8px">Optimized</span>
+    <button class="btn opt" data-preset="opt_fib" title="Global best: efficacy 100, 0 adverse effects">★ Fibrotic-targeted</button>
+    <button class="btn opt" data-preset="opt_lung" title="Inhaled: efficacy 100, 0 AEs">Inhaled</button>
+    <button class="btn opt" data-preset="opt_skin" title="Topical: efficacy 100, 0 AEs">Topical</button>
+    <button class="btn opt" data-preset="opt_sys" title="Best oral/systemic: efficacy 95, 6 non-serious AEs">Systemic</button>
+    <button class="btn" id="themeBtn" style="margin-left:auto">Dark</button>
+  </div>
+
+  <!-- BACKWARD panel -->
+  <div id="bwdPanel" class="expl hide">
+    <div class="goalrow"><b>Design goal:</b>
+      <label><input type="checkbox" id="gRev" checked> Must achieve fibrosis reversal</label>
+    </div>
+    <div class="goalrow"><b style="min-width:70px">Avoid:</b>
+      <label><input type="checkbox" class="gAvoid" value="serious" checked> all Serious effects</label>
+      <label><input type="checkbox" class="gAvoid" value="pah"> PAH specifically</label>
+      <label><input type="checkbox" class="gAvoid" value="bleed"> Bleeding</label>
+      <label><input type="checkbox" class="gAvoid" value="immune"> Immunosuppression</label>
+    </div>
+    <div class="goalrow"><b style="min-width:70px">Constraint:</b>
+      <label><input type="checkbox" id="gSys"> Systemic delivery only (no targeted formulation)</label>
+      <button class="btn active" id="solveBtn" style="margin-left:auto">Design placeholder →</button>
+    </div>
+    <div id="solveMsg" style="margin-top:4px"></div>
+  </div>
+
+  <div class="scorestrip" id="scorestrip"></div>
+
+  <div class="app">
+    <div class="editor">
+      <input class="name" id="pname" value="RR-Fib-1"/>
+      <h3>Targets to hit — therapeutic</h3>
+      <div id="therList"></div>
+      <div class="divider"></div>
+      <h3>Anti-targets — spare these</h3>
+      <div id="antiList"></div>
+      <div class="divider"></div>
+      <h3>Delivery / localization</h3>
+      <div id="locList"></div>
+    </div>
+    <div class="canvas">
+      <svg id="svg" role="img" aria-label="Placeholder drug causal map"></svg>
+    </div>
+  </div>
+
+  <div class="readout" id="readout"></div>
+
+  <p class="foot">
+    Efficacy weights and severities are <b>illustrative design heuristics</b> for exploring trade-offs, not validated potencies — a real program would replace them with measured pharmacology. Adverse-effect and target biology grounded in: mechanotransduction-in-fibrosis reviews; belumosudil/ROCK2 (FDA cGVHD); FAK-in-fibrosis literature; YAP/TAZ Hippo-inhibition toxicity. "On-target / wrong tissue" effects are removable only by localization; "off-target" effects are removable by sparing the gene. Prepared 2026-07-28 · Ritschel Research.
+  </p>
+</div>
+<div class="tooltip" id="tip"></div>
+
+<script>
+const SEV={serious:{ic:'▲',lab:'SERIOUS',hex:'#c4392f',w:25},moderate:{ic:'◆',lab:'MODERATE',hex:'#dd9a1f',w:10},low:{ic:'●',lab:'LOW',hex:'#6b7480',w:3},benefit:{ic:'✓',lab:'BENEFIT',hex:'#2f9e44'}};
+const TISSUE={fibrotic:'Fibrotic tissue / myofibroblast',pulmendo:'Pulmonary endothelium',platelets:'Platelets',
+  marrow:'Bone marrow',immune:'Immune cells',cardiac:'Heart / conduction',retina:'Retina',skin:'Skin',
+  muscle:'Skeletal muscle',gi:'GI epithelium',cns:'CNS',vasc:'Vasculature'};
+
+// target universe
+const TARGETS=[
+ {id:'YAP',label:'YAP / TAZ',type:'ther',eff:40,note:'Master mechanotransduction output — strongest anti-myofibroblast node, but broad normal-tissue roles.',
+   aes:[{label:'GI epithelial toxicity',t:'gi',s:'serious'},{label:'Immunosuppression',t:'immune',s:'moderate'},{label:'Impaired wound healing',t:'fibrotic',s:'moderate'}]},
+ {id:'SRC',label:'SRC-family',type:'ther',eff:30,note:'Myofibroblast mechanotransduction (SSc repurposing case). Same inhibition in platelets/lung vessel wall is the problem.',
+   aes:[{label:'Bleeding / platelet dysfunction',t:'platelets',s:'serious'},{label:'Pulmonary arterial hypertension',t:'pulmendo',s:'serious'},{label:'Pleural effusion',t:'pulmendo',s:'serious'}]},
+ {id:'MEK',label:'MEK1/2',type:'ther',eff:30,note:'MAPK/ERK (SSc repurposing case). Every adverse effect is this pathway in normal tissue.',
+   aes:[{label:'Retinopathy / RVO',t:'retina',s:'serious'},{label:'Acneiform rash',t:'skin',s:'moderate'},{label:'↓ LVEF',t:'cardiac',s:'moderate'},{label:'CK elevation',t:'muscle',s:'low'},{label:'Diarrhea',t:'gi',s:'low'},{label:'Neurologic AEs',t:'cns',s:'moderate'}]},
+ {id:'FAK',label:'FAK (PTK2)',type:'ther',eff:30,note:'Focal-adhesion mechanotransduction; antifibrotic in IPF models.',
+   aes:[{label:'GI toxicity',t:'gi',s:'moderate'},{label:'Hematologic / cytopenia',t:'marrow',s:'low'}]},
+ {id:'ROCK2',label:'ROCK2',type:'ther',eff:25,note:'Rho-kinase mechanotransduction + Th17/Treg. Belumosudil (100x ROCK2-selective) approved cGVHD.',
+   aes:[{label:'Infection / immunosuppression',t:'immune',s:'moderate'},{label:'Nausea / diarrhea',t:'gi',s:'low'}]},
+ {id:'PDGFR',label:'PDGFRA/B',type:'ther',eff:20,note:'Anti-fibrotic but drives fluid retention.',
+   aes:[{label:'Fluid retention / edema',t:'vasc',s:'moderate'}]},
+ {id:'DDR1',label:'DDR1',type:'ther',eff:20,note:'Collagen-sensing RTK; comparatively clean.',
+   aes:[{label:'Mild epithelial effects',t:'gi',s:'low'}]},
+ // anti-targets
+ {id:'KIT',label:'KIT',type:'anti',eff:0,note:'No antifibrotic rationale.',aes:[{label:'Myelosuppression / cytopenias',t:'marrow',s:'serious'}]},
+ {id:'BTK',label:'BTK',type:'anti',eff:0,note:'No antifibrotic rationale.',aes:[{label:'Bleeding',t:'platelets',s:'serious'},{label:'Immunosuppression',t:'immune',s:'moderate'}]},
+ {id:'LCK',label:'LCK',type:'anti',eff:0,aes:[{label:'Immunosuppression',t:'immune',s:'moderate'}]},
+ {id:'TYK2',label:'TYK2 / HCK',type:'anti',eff:0,aes:[{label:'Immunosuppression / infection',t:'immune',s:'moderate'}]},
+ {id:'EPH',label:'EPHB / EPHA',type:'anti',eff:0,aes:[{label:'Vascular remodeling',t:'pulmendo',s:'moderate'}]},
+ {id:'hERG',label:'KCNH2 (hERG)',type:'anti',eff:0,aes:[{label:'QT prolongation',t:'cardiac',s:'serious'}]},
+ {id:'ROCK1',label:'ROCK1',type:'anti',eff:0,note:'ROCK1 (vs ROCK2) drives cardiovascular effects — a ROCK2-selective drug spares it.',aes:[{label:'Hypotension / cardiovascular',t:'cardiac',s:'moderate'}]},
+];
+const byId={}; TARGETS.forEach(t=>byId[t.id]=t);
+const LOC={
+ systemic:{label:'Systemic',desc:'Reaches every tissue — no protection from off-tissue effects',tissues:Object.keys(TISSUE)},
+ lung:{label:'Lung / inhaled',desc:'Lung parenchyma + pulmonary vasculature',tissues:['fibrotic','pulmendo']},
+ skin:{label:'Skin / topical',desc:'Skin fibrosis + skin',tissues:['fibrotic','skin']},
+ fibrotic:{label:'Fibrotic-tissue targeted',desc:'Idealized delivery to myofibroblasts only',tissues:['fibrotic']},
+};
+const REV_THRESHOLD=40;
+
+let state={name:'RR-Opt · fibrotic-targeted',hit:new Set(['SRC','MEK','FAK','ROCK2']),loc:'fibrotic',mode:'fwd'};
+
+function reachable(){return new Set(LOC[state.loc].tissues);}
+function compute(){
+  const reach=reachable();
+  let eff=0; state.hit.forEach(id=>{if(byId[id].type==='ther')eff+=byId[id].eff;});
+  eff=Math.min(100,eff);
+  const active={}; // label -> {label,t,s,srcs:[],onTarget}
+  state.hit.forEach(id=>{const T=byId[id];
+    T.aes.forEach(a=>{ if(reach.has(a.t)){
+      if(!active[a.label])active[a.label]={label:a.label,t:a.t,s:a.s,srcs:[],onTarget:false};
+      active[a.label].srcs.push(id);
+      if(T.type==='ther')active[a.label].onTarget=true;
+      if(SEV[a.s].w>SEV[active[a.label].s].w)active[a.label].s=a.s;
+    }});
+  });
+  const aes=Object.values(active).sort((x,y)=>SEV[y.s].w-SEV[x.s].w);
+  const penalty=aes.reduce((s,a)=>s+SEV[a.s].w,0);
+  const score=Math.max(0,eff-penalty);
+  return {eff,reversal:eff>=REV_THRESHOLD,aes,score};
+}
+
+// ---------- editor ----------
+function renderEditor(){
+  const th=document.getElementById('therList'),an=document.getElementById('antiList');
+  th.innerHTML='';an.innerHTML='';
+  TARGETS.filter(t=>t.type==='ther').forEach(t=>{
+    const d=document.createElement('label');d.className='tgt';
+    d.innerHTML=`<input type="checkbox" ${state.hit.has(t.id)?'checked':''}>
+      <span class="dot" style="background:var(--ther)"></span>${t.label}<span class="eff">eff ${t.eff}</span>`;
+    d.querySelector('input').addEventListener('change',e=>{e.target.checked?state.hit.add(t.id):state.hit.delete(t.id);render();});
+    d.title=t.note||'';th.appendChild(d);
+  });
+  TARGETS.filter(t=>t.type==='anti').forEach(t=>{
+    const d=document.createElement('label');d.className='tgt anti';
+    d.innerHTML=`<input type="checkbox" ${state.hit.has(t.id)?'checked':''}>
+      <span class="dot" style="background:var(--anti)"></span>${t.label}<span class="eff">spare</span>`;
+    d.querySelector('input').addEventListener('change',e=>{e.target.checked?state.hit.add(t.id):state.hit.delete(t.id);render();});
+    d.title=t.note||'';an.appendChild(d);
+  });
+  const ll=document.getElementById('locList');ll.innerHTML='';
+  Object.entries(LOC).forEach(([k,v])=>{
+    const d=document.createElement('div');d.className='loc'+(state.loc===k?' sel':'');
+    d.innerHTML=`<b>${v.label}</b><small>${v.desc}</small>`;
+    d.addEventListener('click',()=>{state.loc=k;render();});ll.appendChild(d);
+  });
+}
+
+// ---------- diagram ----------
+const svg=document.getElementById('svg'),NS='http://www.w3.org/2000/svg';
+const colX=[20,215,470,760],colW=[150,150,180,300];
+const TOP=48,GAPIN=10,GAPG=22,LH=14,maxC=[16,17,20,32];
+function wrap(t,m){const w=t.split(' '),ls=[];let c='';w.forEach(x=>{if((c+' '+x).trim().length>m){if(c)ls.push(c);c=x;}else c=(c+' '+x).trim();});if(c)ls.push(c);return ls;}
+function renderDiagram(r){
+  // build node/edge sets from active structure
+  const nodes=[],edges=[],seen={};
+  function add(id,layer,label,kind,extra){if(seen[id])return;seen[id]={id,layer,label,kind,...(extra||{})};nodes.push(seen[id]);}
+  add('PH',0,state.name||'Placeholder',state.reversal?'phgood':'ph');
+  // efficacy path
+  const hitTher=[...state.hit].filter(id=>byId[id].type==='ther');
+  if(r.eff>0){
+    add('fibrotic',2,TISSUE.fibrotic,'tissue');
+    add('OUT_rev',3,'Fibrosis / myofibroblast reversal',r.reversal?'benefit':'benefitweak',{sev:'benefit',sub:r.reversal?'✓ ACHIEVED':'partial ('+r.eff+')'});
+    hitTher.forEach(id=>{add('T_'+id,1,byId[id].label,'ther');edges.push(['PH','T_'+id,'ther']);edges.push(['T_'+id,'fibrotic','ther']);});
+    edges.push(['fibrotic','OUT_rev','benefit']);
+  }
+  // adverse paths
+  r.aes.forEach(a=>{
+    const oid='OUT_'+a.label.replace(/[^a-z]/gi,'');
+    add(oid,3,a.label,'ae',{sev:a.s,onTarget:a.onTarget});
+    add(a.t,2,TISSUE[a.t],'tissue');
+    a.srcs.forEach(sid=>{add('T_'+sid,1,byId[sid].label,byId[sid].type);edges.push(['PH','T_'+sid,byId[sid].type]);edges.push(['T_'+sid,a.t,a.s]);});
+    edges.push([a.t,oid,a.s]);
+  });
+  // layout
+  const geo={},colH=[0,0,0,0];
+  for(let L=0;L<4;L++){const ns=nodes.filter(n=>n.layer===L);let y=0,last=null;
+    ns.forEach(n=>{if(last!==null)y+=(L===1&&n.kind!==last?GAPG:GAPIN);
+      const lines=wrap(n.label,maxC[L]);let h=Math.max(30,lines.length*LH+14);if(n.layer===3)h=Math.max(38,lines.length*LH+26);
+      geo[n.id]={x:colX[L],w:colW[L],y,h,lines};y+=h;last=n.kind;});colH[L]=y;}
+  const H=Math.max(...colH,80);
+  for(let L=0;L<4;L++){const ns=nodes.filter(n=>n.layer===L);const off=(H-colH[L])/2;ns.forEach(n=>geo[n.id].y+=off+TOP);}
+  const totalH=H+TOP+16,totalW=colX[3]+colW[3]+6;
+  svg.setAttribute('viewBox',`0 0 ${totalW} ${totalH}`);svg.innerHTML='';
+  ['PLACEHOLDER','TARGET','TISSUE','OUTCOME'].forEach((h,i)=>{const t=document.createElementNS(NS,'text');
+    t.setAttribute('x',colX[i]);t.setAttribute('y',28);t.setAttribute('class','colhead');t.textContent=h;svg.appendChild(t);});
+  const colOf=k=>({ther:'var(--ther)',anti:'var(--anti)',benefit:'var(--benefit)',tissue:'var(--tissue)'}[k]);
+  edges.forEach(([a,b,k])=>{if(!geo[a]||!geo[b])return;const ga=geo[a],gb=geo[b];
+    const x1=ga.x+ga.w,y1=ga.y+ga.h/2,x2=gb.x,y2=gb.y+gb.h/2,mx=(x1+x2)/2;
+    const p=document.createElementNS(NS,'path');p.setAttribute('d',`M${x1},${y1} C${mx},${y1} ${mx},${y2} ${x2},${y2}`);
+    let col=SEV[k]?SEV[k].hex&&`var(--${k})`:colOf(k); if(SEV[k])col=`var(--${k})`;
+    p.setAttribute('stroke',col);p.setAttribute('fill','none');p.setAttribute('stroke-width',k==='serious'?2.4:2);
+    p.setAttribute('stroke-linecap','round');p.setAttribute('opacity',.6);svg.appendChild(p);});
+  nodes.forEach(n=>{const g=geo[n.id];const gEl=document.createElementNS(NS,'g');gEl.setAttribute('class','node');
+    const accent = n.kind==='ae'?`var(--${n.sev})` : n.kind==='benefit'||n.kind==='benefitweak'?'var(--benefit)':
+      n.kind==='ther'?'var(--ther)':n.kind==='anti'?'var(--anti)':n.kind==='tissue'?'var(--tissue)':
+      n.kind==='phgood'?'var(--benefit)':'var(--ther)';
+    const rect=document.createElementNS(NS,'rect');rect.setAttribute('x',g.x);rect.setAttribute('y',g.y);
+    rect.setAttribute('width',g.w);rect.setAttribute('height',g.h);rect.setAttribute('rx',7);
+    rect.setAttribute('fill','var(--node)');rect.setAttribute('stroke','var(--nodeStroke)');rect.setAttribute('stroke-width','1.2');gEl.appendChild(rect);
+    if(n.layer===3){const tint=document.createElementNS(NS,'rect');tint.setAttribute('x',g.x);tint.setAttribute('y',g.y);
+      tint.setAttribute('width',g.w);tint.setAttribute('height',g.h);tint.setAttribute('rx',7);tint.setAttribute('fill',accent);tint.setAttribute('opacity',.1);gEl.appendChild(tint);}
+    const acc=document.createElementNS(NS,'rect');acc.setAttribute('x',g.x);acc.setAttribute('y',g.y);acc.setAttribute('width',4.5);
+    acc.setAttribute('height',g.h);acc.setAttribute('rx',2);acc.setAttribute('fill',accent);gEl.appendChild(acc);
+    const tx=g.x+12;let ty=g.y+(n.layer===3?15:g.h/2-(g.lines.length-1)*LH/2+4);
+    const t=document.createElementNS(NS,'text');t.setAttribute('x',tx);t.setAttribute('y',ty);
+    t.setAttribute('style',`font-weight:${n.layer===0?800:(n.layer===1?600:500)}`);
+    g.lines.forEach((ln,i)=>{const ts=document.createElementNS(NS,'tspan');ts.setAttribute('x',tx);ts.setAttribute('dy',i?LH:0);ts.textContent=ln;t.appendChild(ts);});
+    gEl.appendChild(t);
+    if(n.layer===3){const tag=document.createElementNS(NS,'text');tag.setAttribute('x',tx);tag.setAttribute('y',g.y+g.h-8);
+      tag.setAttribute('class','tag');tag.setAttribute('fill',accent);
+      let s=n.sub||((n.onTarget?'▲ on-target':'off-target'));if(n.kind==='ae')s=(SEV[n.sev].ic)+' '+(n.onTarget?'ON-TARGET · WRONG TISSUE':'OFF-TARGET');
+      tag.textContent=s;gEl.appendChild(tag);}
+    svg.appendChild(gEl);
+  });
+}
+
+// ---------- readout ----------
+function renderScore(r){
+  const strip=document.getElementById('scorestrip');
+  const effCol=r.reversal?'var(--benefit)':'var(--moderate)';
+  const serious=r.aes.filter(a=>a.s==='serious').length;
+  strip.innerHTML=`
+   <div class="card"><div class="k">Predicted efficacy</div><div class="v" style="color:${effCol}">${r.eff}<span style="font-size:13px;color:var(--muted)">/100</span></div>
+     <div class="bar"><i style="width:${r.eff}%;background:${effCol}"></i></div></div>
+   <div class="card"><div class="k">Fibrosis reversal</div><div class="v"><span class="badge" style="background:${r.reversal?'var(--benefit)':'var(--moderate)'}">${r.reversal?'ACHIEVED':'INSUFFICIENT'}</span></div></div>
+   <div class="card"><div class="k">Adverse effects</div><div class="v">${r.aes.length} <span style="font-size:13px;color:var(--serious)">(${serious} serious)</span></div></div>
+   <div class="card"><div class="k">Design score</div><div class="v" style="color:${r.score>=40?'var(--benefit)':r.score>0?'var(--moderate)':'var(--serious)'}">${r.score}</div>
+     <div class="bar"><i style="width:${r.score}%;background:${r.score>=40?'var(--benefit)':'var(--moderate)'}"></i></div></div>`;
+}
+function renderReadout(r){
+  const el=document.getElementById('readout');
+  let h=`<h3>Active adverse effects — and how to remove each</h3>`;
+  if(!r.aes.length){h+=`<div class="none">✓ No adverse effects active under this design. `+
+    (state.loc==='fibrotic'?'Fibrotic-tissue targeting neutralizes every off-tissue liability.':'')+`</div>`;}
+  else{
+    r.aes.forEach(a=>{
+      const fix = a.onTarget
+        ? `On-target in ${TISSUE[a.t]} — cannot be removed by target selectivity. Remove by localization (deliver away from ${TISSUE[a.t]}) or drop ${a.srcs.filter(s=>byId[s].type==='ther').map(s=>byId[s].label).join('/')} (−efficacy).`
+        : `Off-target: caused only by ${a.srcs.map(s=>byId[s].label).join(', ')}. Remove by sparing that gene — no efficacy cost.`;
+      h+=`<div class="ae"><span class="sv" style="color:${SEV[a.s].hex}">${SEV[a.s].ic} ${SEV[a.s].lab}</span>
+        <div><b>${a.label}</b> <span class="pill" style="background:${a.onTarget?'#8a6d3b':'#7a8595'}">${a.onTarget?'ON-TARGET / WRONG TISSUE':'OFF-TARGET'}</span>
+        <div class="fix">${fix}</div></div></div>`;
+    });
+  }
+  el.innerHTML=h;
+}
+
+function render(){
+  document.getElementById('pname').value=state.name;
+  const r=compute();renderEditor();renderDiagram(r);renderScore(r);renderReadout(r);
+}
+
+// ---------- backward solver ----------
+function solve(){
+  const requireRev=document.getElementById('gRev').checked;
+  const avoid=[...document.querySelectorAll('.gAvoid:checked')].map(c=>c.value);
+  const sysOnly=document.getElementById('gSys').checked;
+  const thers=TARGETS.filter(t=>t.type==='ther').map(t=>t.id);
+  const locs=sysOnly?['systemic']:['systemic','lung','skin','fibrotic'];
+  const locRank={systemic:0,lung:1,skin:2,fibrotic:3};
+  let best=null;
+  for(let mask=1;mask<(1<<thers.length);mask++){
+    const hit=new Set(); thers.forEach((id,i)=>{if(mask&(1<<i))hit.add(id);});
+    for(const loc of locs){
+      const saved={hit:state.hit,loc:state.loc};state.hit=hit;state.loc=loc;const r=compute();state.hit=saved.hit;state.loc=saved.loc;
+      if(requireRev&&!r.reversal)continue;
+      // check avoid
+      let ok=true;
+      for(const a of r.aes){
+        if(avoid.includes('serious')&&a.s==='serious'){ok=false;break;}
+        if(avoid.includes('pah')&&a.label.includes('Pulmonary')){ok=false;break;}
+        if(avoid.includes('bleed')&&a.label.includes('Bleeding')){ok=false;break;}
+        if(avoid.includes('immune')&&a.label.toLowerCase().includes('immun')){ok=false;break;}
+      }
+      if(!ok)continue;
+      const cand={hit,loc,r,nHit:hit.size};
+      if(!best|| better(cand,best,locRank))best=cand;
+    }
+  }
+  const msg=document.getElementById('solveMsg');
+  if(!best){
+    msg.innerHTML=`<b style="color:var(--serious)">No placeholder satisfies these constraints.</b> `+
+      (sysOnly?`With systemic delivery, the on-target/off-tissue effects (e.g. PAH from SRC, or the MEK normal-tissue profile) cannot be avoided while keeping enough efficacy. Allow a targeted formulation (uncheck 'systemic only') and try again — that is the whole point: <b>the lever is localization, not target choice.</b>`:`Loosen a constraint.`);
+    return;
+  }
+  state.hit=new Set(best.hit);state.loc=best.loc;
+  const names=[...best.hit].map(id=>byId[id].label).join(' + ');
+  state.name='RR-Auto';
+  msg.innerHTML=`<b style="color:var(--benefit)">Solution found.</b> Hit <b>${names}</b>, delivered <b>${LOC[best.loc].label.toLowerCase()}</b> → efficacy ${best.r.eff}, ${best.r.aes.length} adverse effect(s). `+
+    (best.loc==='systemic'?`A systemic design works here.`:`Note it required a <b>${LOC[best.loc].label}</b> formulation — no systemic-only design met the goal, because the residual effects are on-target/off-tissue.`);
+  render();
+}
+function better(a,b,locRank){
+  // fewer active AEs first, then higher efficacy, then simpler localization, then fewer targets
+  if(a.r.aes.length!==b.r.aes.length)return a.r.aes.length<b.r.aes.length;
+  if(a.r.eff!==b.r.eff)return a.r.eff>b.r.eff;
+  if(locRank[a.loc]!==locRank[b.loc])return locRank[a.loc]<locRank[b.loc];
+  return a.nHit<b.nHit;
+}
+
+// ---------- presets & controls ----------
+const PRESETS={
+ das:{name:'Dasatinib-like',hit:['SRC','KIT','BTK','LCK','TYK2','EPH','hERG'],loc:'systemic'},
+ ideal:{name:'Idealized core',hit:['SRC','MEK','DDR1'],loc:'systemic'},
+ yaploc:{name:'YAP · localized',hit:['YAP','FAK','ROCK2'],loc:'fibrotic'},
+ opt_fib:{name:'RR-Opt · fibrotic-targeted',hit:['SRC','MEK','FAK','ROCK2'],loc:'fibrotic'},
+ opt_lung:{name:'RR-Opt · inhaled',hit:['MEK','FAK','ROCK2','PDGFR'],loc:'lung'},
+ opt_skin:{name:'RR-Opt · topical',hit:['SRC','FAK','ROCK2','PDGFR'],loc:'skin'},
+ opt_sys:{name:'RR-Opt · systemic',hit:['FAK','ROCK2','PDGFR','DDR1'],loc:'systemic'},
+};
+document.querySelectorAll('[data-preset]').forEach(b=>b.addEventListener('click',()=>{
+  const p=PRESETS[b.dataset.preset];state.name=p.name;state.hit=new Set(p.hit);state.loc=p.loc;render();}));
+document.getElementById('pname').addEventListener('input',e=>{state.name=e.target.value;renderDiagram(compute());});
+document.getElementById('mFwd').addEventListener('click',()=>{state.mode='fwd';
+  document.getElementById('mFwd').classList.add('active');document.getElementById('mBwd').classList.remove('active');
+  document.getElementById('bwdPanel').classList.add('hide');});
+document.getElementById('mBwd').addEventListener('click',()=>{state.mode='bwd';
+  document.getElementById('mBwd').classList.add('active');document.getElementById('mFwd').classList.remove('active');
+  document.getElementById('bwdPanel').classList.remove('hide');});
+document.getElementById('solveBtn').addEventListener('click',solve);
+document.getElementById('themeBtn').addEventListener('click',()=>{document.body.classList.toggle('dark');
+  document.getElementById('themeBtn').textContent=document.body.classList.contains('dark')?'Light':'Dark';});
+render();
+</script>
+</body>
+</html>

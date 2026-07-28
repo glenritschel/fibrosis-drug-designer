@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Off-Target Interaction Network — Kinase Inhibitors in Fibrosis</title>
+<style>
+  :root{
+    --bg:#ffffff; --panel:#f5f7fa; --node:#ffffff; --nodeStroke:#d8dee7;
+    --ink:#161b22; --muted:#5b6470; --grid:#e6ebf1;
+    --das:#0072b2; --pd:#d55e00;
+    --serious:#c4392f; --moderate:#dd9a1f; --low:#3f8f63; --overlap:#7b5ea7;
+    --linkDim:rgba(120,130,145,.12); --nodeDim:.14;
+  }
+  body.dark{
+    --bg:#11161d; --panel:#1a212b; --node:#232c38; --nodeStroke:#39424f;
+    --ink:#e8edf3; --muted:#9aa6b2; --grid:#2a323d;
+    --das:#4da6e0; --pd:#f0813f;
+    --serious:#e56b62; --moderate:#f0c15a; --low:#6cc796; --overlap:#b096dd;
+    --linkDim:rgba(150,160,175,.10);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;
+    background:var(--bg);color:var(--ink);-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1240px;margin:0 auto;padding:22px 22px 60px}
+  h1{font-size:19px;margin:0 0 3px;letter-spacing:-.2px}
+  .sub{font-size:12.5px;color:var(--muted);margin:0 0 16px;line-height:1.5}
+  .sub b{color:var(--serious)}
+  .controls{display:flex;flex-wrap:wrap;gap:18px;align-items:center;
+    background:var(--panel);border:1px solid var(--grid);border-radius:10px;
+    padding:11px 15px;margin-bottom:14px}
+  .cgroup{display:flex;align-items:center;gap:9px;font-size:12px}
+  .cgroup .lbl{color:var(--muted);font-weight:600;text-transform:uppercase;
+    letter-spacing:.4px;font-size:10.5px}
+  .chip{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:20px;
+    border:1.5px solid var(--nodeStroke);cursor:pointer;user-select:none;font-size:12px;
+    background:var(--node);transition:.12s;font-weight:500}
+  .chip .sw{width:11px;height:11px;border-radius:3px;flex:none}
+  .chip .ic{font-size:11px;line-height:1}
+  .chip.off{opacity:.34;filter:grayscale(.7)}
+  .chip:hover{border-color:var(--muted)}
+  .btn{padding:5px 12px;border-radius:7px;border:1px solid var(--nodeStroke);
+    background:var(--node);color:var(--ink);cursor:pointer;font-size:12px;font-weight:500}
+  .btn:hover{border-color:var(--muted)}
+  .hint{font-size:11.5px;color:var(--muted);margin:2px 0 10px}
+  svg{width:100%;height:auto;display:block;font-family:inherit}
+  .colhead{font-size:11px;font-weight:700;fill:var(--muted);text-transform:uppercase;letter-spacing:.6px}
+  .grouplab{font-size:10.5px;font-weight:700;letter-spacing:.3px}
+  .node rect{stroke-width:1.2px}
+  .node .accent{stroke-width:0}
+  .node text{fill:var(--ink);font-size:11.5px}
+  .node .tag{font-size:9px;font-weight:700;letter-spacing:.3px}
+  .link{fill:none;stroke-linecap:round;transition:opacity .12s}
+  .node,.link{transition:opacity .12s}
+  .dimmed{opacity:var(--nodeDim)!important}
+  .linkdimmed{opacity:.06!important}
+  .tooltip{position:fixed;pointer-events:none;z-index:20;max-width:260px;
+    background:var(--node);border:1px solid var(--nodeStroke);border-radius:8px;
+    padding:9px 11px;font-size:12px;line-height:1.45;color:var(--ink);
+    box-shadow:0 6px 22px rgba(0,0,0,.18);opacity:0;transition:opacity .1s}
+  .tooltip .tt{font-weight:700;margin-bottom:2px}
+  .tooltip .tc{color:var(--muted);font-size:11px}
+  .tooltip .ts{font-weight:700;font-size:11px}
+  table{border-collapse:collapse;width:100%;font-size:12px;margin-top:6px}
+  th,td{border:1px solid var(--grid);padding:6px 9px;text-align:left;vertical-align:top}
+  th{background:var(--panel);font-weight:700}
+  .sevpill{display:inline-block;padding:1px 8px;border-radius:20px;color:#fff;font-size:10.5px;font-weight:700}
+  .hide{display:none}
+  .foot{font-size:11px;color:var(--muted);margin-top:14px;line-height:1.55}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Off-Target Interaction Network — Kinase Inhibitors in Fibrosis</h1>
+  <p class="sub">
+    Layered flow: <b style="color:var(--muted)">Compound → Molecular target → Organ / tissue → Adverse effect</b>.
+    Edge &amp; endpoint color = clinical severity. &nbsp;<b>⚠ Dasatinib can cause pulmonary arterial hypertension — a paradox when the goal is treating SSc-associated PAH.</b>
+  </p>
+
+  <div class="controls">
+    <div class="cgroup"><span class="lbl">Compound</span>
+      <span class="chip" data-drug="das"><span class="sw" style="background:var(--das)"></span>Dasatinib</span>
+      <span class="chip" data-drug="pd"><span class="sw" style="background:var(--pd)"></span>PD-0325901</span>
+    </div>
+    <div class="cgroup"><span class="lbl">Severity</span>
+      <span class="chip" data-sev="serious"><span class="ic">▲</span><span class="sw" style="background:var(--serious)"></span>Serious</span>
+      <span class="chip" data-sev="moderate"><span class="ic">◆</span><span class="sw" style="background:var(--moderate)"></span>Moderate</span>
+      <span class="chip" data-sev="low"><span class="ic">●</span><span class="sw" style="background:var(--low)"></span>Low</span>
+      <span class="chip" data-sev="overlap"><span class="ic">◎</span><span class="sw" style="background:var(--overlap)"></span>Therapeutic overlap</span>
+    </div>
+    <div class="cgroup" style="margin-left:auto">
+      <button class="btn" id="viewBtn">Table view</button>
+      <button class="btn" id="themeBtn">Dark</button>
+    </div>
+  </div>
+  <p class="hint">Hover or tap any node to trace its full pathway (upstream causes + downstream consequences). Click a legend chip to filter. </p>
+
+  <div id="netView"><svg id="svg" role="img" aria-label="Off-target interaction network"></svg></div>
+  <div id="tableView" class="hide"></div>
+
+  <p class="foot">
+    Dasatinib off-targets from Rix et al., <i>Blood</i> 2007 (representative — dasatinib binds &gt;100 kinases); PAH/effusion from dasatinib-PAH literature.
+    PD-0325901 is a selective allosteric MEK1/2 inhibitor: its targets are shown as <i>on-target inhibition in normal tissue</i>, not off-target binding — that pathway (MAPK/ERK) is the toxicity driver.
+    "Therapeutic overlap" = inhibition that may be partly beneficial in fibrosis. Prepared 2026-07-28 · Ritschel Research.
+  </p>
+</div>
+
+<div class="tooltip" id="tip"></div>
+
+<script>
+const SEV={serious:{c:'var(--serious)',ic:'▲',lab:'Serious',hex:'#c4392f'},
+  moderate:{c:'var(--moderate)',ic:'◆',lab:'Moderate',hex:'#dd9a1f'},
+  low:{c:'var(--low)',ic:'●',lab:'Low',hex:'#3f8f63'},
+  overlap:{c:'var(--overlap)',ic:'◎',lab:'Therapeutic overlap',hex:'#7b5ea7'}};
+
+// ---- nodes ----
+const N=[
+ // compounds
+ {id:'das',layer:0,drug:'das',label:'Dasatinib',note:'SRC/ABL multi-kinase inhibitor (FDA-approved). Highly promiscuous.'},
+ {id:'pd',layer:0,drug:'pd',label:'PD-0325901',note:'Selective allosteric MEK1/2 inhibitor. Toxicity is on-target in normal tissue.'},
+ // dasatinib targets
+ {id:'SRC',layer:1,drug:'das',label:'SRC',note:'SRC-family TK. Intended target in myofibroblasts; same inhibition in platelets & endothelium drives harm.'},
+ {id:'KIT',layer:1,drug:'das',label:'KIT',note:'c-Kit RTK — marrow, mast cells, gut ICC.'},
+ {id:'PDGFR',layer:1,drug:'das',label:'PDGFRA/B',note:'PDGF receptors — vasculature & fibroblasts.'},
+ {id:'BTK',layer:1,drug:'das',label:'BTK',note:'TEC-family TK; a major dasatinib target (Hantschel 2007). Platelets & B cells.'},
+ {id:'LCK',layer:1,drug:'das',label:'LCK',note:'SRC-family, T-cell receptor signalling.'},
+ {id:'TYK2',layer:1,drug:'das',label:'TYK2 / HCK',note:'JAK & myeloid SRC-family — cytokine/immune signalling.'},
+ {id:'EPH',layer:1,drug:'das',label:'EPHB / EPHA',note:'Ephrin receptor RTKs — vascular remodelling.'},
+ {id:'DDR1',layer:1,drug:'das',label:'DDR1',note:'Collagen-activated RTK; pro-fibrotic — inhibition likely beneficial.'},
+ {id:'hERG',layer:1,drug:'das',label:'KCNH2 (hERG)',note:'Cardiac K+ channel off-target.'},
+ // pd target
+ {id:'MEK',layer:1,drug:'pd',label:'MEK1/2',note:'MAP2K1/2 — the intended target; on-target inhibition in normal tissue causes toxicity.'},
+ // dasatinib systems
+ {id:'platelets',layer:2,drug:'das',label:'Platelets',note:'SRC/BTK signalling in platelets.'},
+ {id:'pulmendo',layer:2,drug:'das',label:'Pulmonary endothelium',note:'SRC-mediated endothelial homeostasis & permeability.'},
+ {id:'marrow',layer:2,drug:'das',label:'Bone marrow',note:'KIT/ABL-dependent haematopoiesis.'},
+ {id:'vasc',layer:2,drug:'das',label:'Vasculature / lymphatics',note:'PDGFR-dependent fluid & lymphatic regulation.'},
+ {id:'immune',layer:2,drug:'das',label:'Immune cells',note:'T/B/myeloid signalling.'},
+ {id:'cardiac',layer:2,drug:'das',label:'Cardiac conduction',note:'hERG repolarisation current.'},
+ {id:'fibro',layer:2,drug:'das',label:'Fibrotic tissue',note:'Myofibroblast / collagen axis.'},
+ // pd systems
+ {id:'retina',layer:2,drug:'pd',label:'Retina (RPE)',note:'MEK/ERK controls RPE fluid transport & blood-retinal barrier.'},
+ {id:'skin',layer:2,drug:'pd',label:'Skin / follicles',note:'MAPK in keratinocytes.'},
+ {id:'heart',layer:2,drug:'pd',label:'Myocardium',note:'ERK essential in cardiomyocytes.'},
+ {id:'muscle',layer:2,drug:'pd',label:'Skeletal muscle',note:'MAPK in muscle.'},
+ {id:'gi',layer:2,drug:'pd',label:'GI tract',note:'MAPK in gut epithelium.'},
+ {id:'cns',layer:2,drug:'pd',label:'CNS',note:'MAPK / neuronal.'},
+ // dasatinib effects
+ {id:'bleed',layer:3,drug:'das',sev:'serious',label:'Bleeding / platelet dysfunction'},
+ {id:'pah',layer:3,drug:'das',sev:'serious',label:'⚠ Pulmonary arterial hypertension',note:'~0.45–5%. A paradox for treating SSc-PAH. Usually reversible; only ~58% fully resolve.'},
+ {id:'effusion',layer:3,drug:'das',sev:'serious',label:'Pleural effusion',note:'20–30%. Vascular permeability + lymphatic dysfunction. Serious in SSc lung disease.'},
+ {id:'cytopenia',layer:3,drug:'das',sev:'serious',label:'Myelosuppression / cytopenias'},
+ {id:'immsupp',layer:3,drug:'das',sev:'moderate',label:'Immunosuppression / infection'},
+ {id:'qt',layer:3,drug:'das',sev:'serious',label:'QT prolongation'},
+ {id:'edema',layer:3,drug:'das',sev:'moderate',label:'Fluid retention / edema'},
+ {id:'antifib',layer:3,drug:'das',sev:'overlap',label:'Anti-fibrotic effect',note:'DDR1/PDGFR inhibition may be therapeutically useful in fibrosis.'},
+ // pd effects
+ {id:'rvo',layer:3,drug:'pd',sev:'serious',label:'Retinal vein occlusion / serous retinopathy',note:'Dose-limiting; terminated PD-0325901 Phase I.'},
+ {id:'rash',layer:3,drug:'pd',sev:'moderate',label:'Acneiform rash'},
+ {id:'lvef',layer:3,drug:'pd',sev:'moderate',label:'↓ LVEF / cardiomyopathy'},
+ {id:'ck',layer:3,drug:'pd',sev:'low',label:'CK elevation / myalgia'},
+ {id:'diarr',layer:3,drug:'pd',sev:'low',label:'Diarrhea / nausea'},
+ {id:'neuro',layer:3,drug:'pd',sev:'moderate',label:'Neurologic AEs / blurred vision'},
+];
+// ---- links ----
+const L=[
+ // compound -> target
+ ['das','SRC'],['das','KIT'],['das','PDGFR'],['das','BTK'],['das','LCK'],
+ ['das','TYK2'],['das','EPH'],['das','DDR1'],['das','hERG'],
+ ['pd','MEK'],
+ // target -> system
+ ['SRC','platelets'],['SRC','pulmendo'],['BTK','platelets'],['KIT','marrow'],
+ ['LCK','immune'],['TYK2','immune'],['PDGFR','vasc'],['PDGFR','fibro'],
+ ['EPH','pulmendo'],['DDR1','fibro'],['hERG','cardiac'],
+ ['MEK','retina'],['MEK','skin'],['MEK','heart'],['MEK','muscle'],['MEK','gi'],['MEK','cns'],
+ // system -> effect
+ ['platelets','bleed'],['pulmendo','pah'],['pulmendo','effusion'],['marrow','cytopenia'],
+ ['vasc','effusion'],['vasc','edema'],['immune','immsupp'],['cardiac','qt'],['fibro','antifib'],
+ ['retina','rvo'],['skin','rash'],['heart','lvef'],['muscle','ck'],['gi','diarr'],['cns','neuro'],
+];
+
+const nodeById={}; N.forEach(n=>nodeById[n.id]=n);
+// severity propagation: a system's severity = downstream effect sev if unique
+const sysSev={};
+N.filter(n=>n.layer===2).forEach(s=>{
+  const sevs=[...new Set(L.filter(l=>l[0]===s.id).map(l=>nodeById[l[1]].sev))];
+  sysSev[s.id]= sevs.length===1?sevs[0]:null;
+});
+function linkSev(a,b){
+  const A=nodeById[a],B=nodeById[b];
+  if(B.layer===3) return B.sev;
+  if(B.layer===2) return sysSev[b]||null;
+  return null; // compound->target
+}
+// adjacency
+const outAdj={},inAdj={};
+N.forEach(n=>{outAdj[n.id]=[];inAdj[n.id]=[];});
+L.forEach(([a,b])=>{outAdj[a].push(b);inAdj[b].push(a);});
+function connected(id){
+  const s=new Set([id]); let q=[id];
+  while(q.length){const c=q.pop();inAdj[c].forEach(p=>{if(!s.has(p)){s.add(p);q.push(p);}});}
+  q=[id];
+  while(q.length){const c=q.pop();outAdj[c].forEach(p=>{if(!s.has(p)){s.add(p);q.push(p);}});}
+  return s;
+}
+
+// ---- layout ----
+const svg=document.getElementById('svg');
+const NS='http://www.w3.org/2000/svg';
+const colX=[30,300,560,835];
+const colW=[150,150,165,275];
+const TOP=64, GAPIN=11, GAPDRUG=30, LH=15;
+function wrap(text,max){
+  const words=text.split(' '); const lines=[]; let cur='';
+  words.forEach(w=>{ if((cur+' '+w).trim().length>max){ if(cur)lines.push(cur); cur=w;} else cur=(cur+' '+w).trim();});
+  if(cur)lines.push(cur); return lines;
+}
+const maxChars=[18,18,20,32];
+let state={das:true,pd:true,sevFilter:new Set()}; // sevFilter empty = all
+let pinned=null;
+
+function build(){
+  // filter visibility
+  const visible=new Set();
+  N.forEach(n=>{
+    if(!state[n.drug]) return;
+    if(state.sevFilter.size){
+      // node visible if it lies on a path to a visible-severity effect
+      const conn=connected(n.id);
+      let ok=false;
+      conn.forEach(c=>{const cn=nodeById[c]; if(cn.layer===3 && cn.drug===n.drug && state.sevFilter.has(cn.sev)) ok=true;});
+      if(!ok) return;
+    }
+    visible.add(n.id);
+  });
+  // compute geometry per column
+  const geo={}; const colHeights=[];
+  for(let layer=0; layer<4; layer++){
+    const nodes=N.filter(n=>n.layer===layer && visible.has(n.id));
+    let y=0, lastDrug=null;
+    nodes.forEach(n=>{
+      if(lastDrug!==null && n.drug!==lastDrug) y+=GAPDRUG; else if(lastDrug!==null) y+=GAPIN;
+      const lines=wrap(n.label,maxChars[layer]);
+      let h=Math.max(34, lines.length*LH+ (n.layer===3?18:16));
+      if(n.layer===3) h+=10; // room for severity tag
+      geo[n.id]={x:colX[layer],w:colW[layer],y:y,h:h,lines:lines};
+      y+=h; lastDrug=n.drug;
+    });
+    colHeights.push(y);
+  }
+  const H=Math.max(...colHeights,120);
+  // center each column
+  for(let layer=0;layer<4;layer++){
+    const nodes=N.filter(n=>n.layer===layer && visible.has(n.id));
+    const off=(H-colHeights[layer])/2;
+    nodes.forEach(n=>{geo[n.id].y+=off+TOP;});
+  }
+  const totalH=H+TOP+30, totalW=colX[3]+colW[3]+10;
+  svg.setAttribute('viewBox',`0 0 ${totalW} ${totalH}`);
+  svg.innerHTML='';
+
+  // column headers
+  const heads=['COMPOUND','MOLECULAR TARGET','ORGAN / TISSUE','ADVERSE EFFECT'];
+  heads.forEach((h,i)=>{
+    const t=document.createElementNS(NS,'text');
+    t.setAttribute('x',colX[i]); t.setAttribute('y',34);
+    t.setAttribute('class','colhead'); t.textContent=h; svg.appendChild(t);
+    const ln=document.createElementNS(NS,'line');
+    ln.setAttribute('x1',colX[i]);ln.setAttribute('x2',colX[i]+colW[i]);
+    ln.setAttribute('y1',42);ln.setAttribute('y2',42);
+    ln.setAttribute('stroke','var(--grid)');ln.setAttribute('stroke-width','1.5');svg.appendChild(ln);
+  });
+
+  // links
+  const linkEls=[];
+  L.forEach(([a,b])=>{
+    if(!visible.has(a)||!visible.has(b)) return;
+    const ga=geo[a],gb=geo[b];
+    const x1=ga.x+ga.w, y1=ga.y+ga.h/2, x2=gb.x, y2=gb.y+gb.h/2;
+    const mx=(x1+x2)/2;
+    const p=document.createElementNS(NS,'path');
+    p.setAttribute('d',`M${x1},${y1} C${mx},${y1} ${mx},${y2} ${x2},${y2}`);
+    const sev=linkSev(a,b);
+    const stroke= sev? SEV[sev].c : `var(--${nodeById[a].drug})`;
+    p.setAttribute('stroke',stroke);
+    p.setAttribute('stroke-width', sev==='serious'?2.4:2);
+    p.setAttribute('class','link');
+    p.setAttribute('opacity', sev? .62:.4);
+    p.dataset.a=a; p.dataset.b=b;
+    svg.appendChild(p); linkEls.push(p);
+  });
+
+  // nodes
+  const nodeEls=[];
+  N.forEach(n=>{
+    if(!visible.has(n.id)) return;
+    const g=geo[n.id];
+    const gEl=document.createElementNS(NS,'g');
+    gEl.setAttribute('class','node'); gEl.dataset.id=n.id;
+    const rect=document.createElementNS(NS,'rect');
+    rect.setAttribute('x',g.x);rect.setAttribute('y',g.y);
+    rect.setAttribute('width',g.w);rect.setAttribute('height',g.h);
+    rect.setAttribute('rx',7);
+    rect.setAttribute('fill','var(--node)');
+    rect.setAttribute('stroke','var(--nodeStroke)');
+    gEl.appendChild(rect);
+    // left accent
+    const acc=document.createElementNS(NS,'rect');
+    acc.setAttribute('x',g.x);acc.setAttribute('y',g.y);
+    acc.setAttribute('width',4.5);acc.setAttribute('height',g.h);
+    const accColor = n.layer===3 ? SEV[n.sev].c : (n.layer===0?`var(--${n.drug})`:`var(--${n.drug})`);
+    acc.setAttribute('fill',accColor);
+    acc.setAttribute('rx',2);
+    gEl.appendChild(acc);
+    if(n.layer===3){
+      const tint=document.createElementNS(NS,'rect');
+      tint.setAttribute('x',g.x);tint.setAttribute('y',g.y);
+      tint.setAttribute('width',g.w);tint.setAttribute('height',g.h);
+      tint.setAttribute('rx',7);tint.setAttribute('fill',SEV[n.sev].c);
+      tint.setAttribute('opacity',.09);gEl.appendChild(tint);
+    }
+    // label
+    const t=document.createElementNS(NS,'text');
+    const tx=g.x+13; let ty=g.y+ (n.layer===3? 17 : g.h/2 - (g.lines.length-1)*LH/2 +4);
+    t.setAttribute('x',tx);t.setAttribute('y',ty);
+    const fw = n.layer===0?700:(n.layer===1?600:500);
+    t.setAttribute('style',`font-weight:${fw}`);
+    g.lines.forEach((ln,i)=>{
+      const ts=document.createElementNS(NS,'tspan');
+      ts.setAttribute('x',tx);ts.setAttribute('dy',i?LH:0);ts.textContent=ln;
+      t.appendChild(ts);
+    });
+    gEl.appendChild(t);
+    // severity tag for effects
+    if(n.layer===3){
+      const tag=document.createElementNS(NS,'text');
+      tag.setAttribute('x',tx);tag.setAttribute('y',g.y+g.h-9);
+      tag.setAttribute('class','tag');tag.setAttribute('fill',SEV[n.sev].c);
+      tag.textContent=SEV[n.sev].ic+' '+SEV[n.sev].lab.toUpperCase();
+      gEl.appendChild(tag);
+    }
+    svg.appendChild(gEl); nodeEls.push(gEl);
+
+    // interaction
+    gEl.addEventListener('mouseenter',e=>{if(!pinned)highlight(n.id);showTip(e,n);});
+    gEl.addEventListener('mousemove',e=>moveTip(e));
+    gEl.addEventListener('mouseleave',()=>{if(!pinned)clearHi();hideTip();});
+    gEl.addEventListener('click',e=>{e.stopPropagation();
+      if(pinned===n.id){pinned=null;clearHi();}else{pinned=n.id;highlight(n.id);}});
+  });
+
+  svg.addEventListener('click',()=>{if(pinned){pinned=null;clearHi();}});
+  window._nodeEls=nodeEls; window._linkEls=linkEls;
+}
+
+function highlight(id){
+  const conn=connected(id);
+  window._nodeEls.forEach(g=>{g.classList.toggle('dimmed',!conn.has(g.dataset.id));});
+  window._linkEls.forEach(p=>{
+    const on=conn.has(p.dataset.a)&&conn.has(p.dataset.b);
+    p.classList.toggle('linkdimmed',!on);
+  });
+}
+function clearHi(){
+  (window._nodeEls||[]).forEach(g=>g.classList.remove('dimmed'));
+  (window._linkEls||[]).forEach(p=>p.classList.remove('linkdimmed'));
+}
+
+// tooltip
+const tip=document.getElementById('tip');
+function showTip(e,n){
+  const cls=['Compound','Molecular target','Organ / tissue','Adverse effect'][n.layer];
+  let html=`<div class="tt">${n.label.replace('⚠ ','')}</div><div class="tc">${cls}${n.layer<3?' · '+(n.drug==='das'?'Dasatinib':'PD-0325901'):''}</div>`;
+  if(n.layer===3) html+=`<div class="ts" style="color:${SEV[n.sev].hex};margin-top:3px">${SEV[n.sev].ic} ${SEV[n.sev].lab}</div>`;
+  if(n.note) html+=`<div style="margin-top:5px">${n.note}</div>`;
+  tip.innerHTML=html; tip.style.opacity=1; moveTip(e);
+}
+function moveTip(e){
+  const pad=14,w=tip.offsetWidth,h=tip.offsetHeight;
+  let x=e.clientX+pad,y=e.clientY+pad;
+  if(x+w>innerWidth)x=e.clientX-w-pad; if(y+h>innerHeight)y=e.clientY-h-pad;
+  tip.style.left=x+'px';tip.style.top=y+'px';
+}
+function hideTip(){tip.style.opacity=0;}
+
+// filters
+document.querySelectorAll('.chip[data-drug]').forEach(c=>{
+  c.addEventListener('click',()=>{const d=c.dataset.drug;state[d]=!state[d];c.classList.toggle('off',!state[d]);pinned=null;build();buildTable();});
+});
+document.querySelectorAll('.chip[data-sev]').forEach(c=>{
+  c.addEventListener('click',()=>{const s=c.dataset.sev;
+    if(state.sevFilter.has(s))state.sevFilter.delete(s);else state.sevFilter.add(s);
+    c.classList.toggle('off',state.sevFilter.size>0 && !state.sevFilter.has(s));
+    // update all sev chips 'off' state
+    document.querySelectorAll('.chip[data-sev]').forEach(cc=>{
+      cc.classList.toggle('off', state.sevFilter.size>0 && !state.sevFilter.has(cc.dataset.sev));});
+    pinned=null;build();buildTable();});
+});
+
+// theme
+document.getElementById('themeBtn').addEventListener('click',()=>{
+  document.body.classList.toggle('dark');
+  document.getElementById('themeBtn').textContent=document.body.classList.contains('dark')?'Light':'Dark';
+});
+// view toggle
+let tableOn=false;
+document.getElementById('viewBtn').addEventListener('click',()=>{
+  tableOn=!tableOn;
+  document.getElementById('netView').classList.toggle('hide',tableOn);
+  document.getElementById('tableView').classList.toggle('hide',!tableOn);
+  document.getElementById('viewBtn').textContent=tableOn?'Network view':'Table view';
+});
+function buildTable(){
+  const rows=[];
+  L.filter(l=>nodeById[l[1]].layer===3).forEach(()=>{});
+  // build full chains compound->target->system->effect
+  N.filter(n=>n.layer===3).forEach(eff=>{
+    if(!state[eff.drug])return;
+    if(state.sevFilter.size && !state.sevFilter.has(eff.sev))return;
+    inAdj[eff.id].forEach(sys=>{
+      inAdj[sys].forEach(tgt=>{
+        inAdj[tgt].forEach(cmp=>{
+          rows.push([nodeById[cmp].label,nodeById[tgt].label,nodeById[sys].label,eff.label.replace('⚠ ','⚠ '),eff.sev]);
+        });
+      });
+    });
+  });
+  let h='<table><thead><tr><th>Compound</th><th>Target</th><th>Organ / tissue</th><th>Adverse effect</th><th>Severity</th></tr></thead><tbody>';
+  rows.forEach(r=>{h+=`<tr><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td>
+    <td><span class="sevpill" style="background:${SEV[r[4]].hex}">${SEV[r[4]].lab}</span></td></tr>`;});
+  h+='</tbody></table>';
+  document.getElementById('tableView').innerHTML=h;
+}
+
+build(); buildTable();
+</script>
+</body>
+</html>

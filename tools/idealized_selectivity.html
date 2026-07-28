@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>the SSc case — Idealized Target-Selectivity What-If</title>
+<style>
+  :root{
+    --bg:#ffffff; --panel:#f5f7fa; --node:#ffffff; --nodeStroke:#d8dee7;
+    --ink:#161b22; --muted:#5b6470; --grid:#e6ebf1;
+    --das:#0072b2; --pd:#d55e00;
+    --serious:#c4392f; --moderate:#dd9a1f; --low:#6b7480; --benefit:#2f9e44;
+  }
+  body.dark{
+    --bg:#11161d; --panel:#1a212b; --node:#232c38; --nodeStroke:#39424f;
+    --ink:#e8edf3; --muted:#9aa6b2; --grid:#2a323d;
+    --das:#4da6e0; --pd:#f0813f;
+    --serious:#e56b62; --moderate:#f0c15a; --low:#8a94a1; --benefit:#51cf66;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;
+    background:var(--bg);color:var(--ink);-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1240px;margin:0 auto;padding:22px 22px 60px}
+  h1{font-size:19px;margin:0 0 3px;letter-spacing:-.2px}
+  .sub{font-size:12.5px;color:var(--muted);margin:0 0 14px;line-height:1.5}
+  .controls{display:flex;flex-wrap:wrap;gap:16px;align-items:center;
+    background:var(--panel);border:1px solid var(--grid);border-radius:10px;
+    padding:11px 15px;margin-bottom:12px}
+  .cgroup{display:flex;align-items:center;gap:9px;font-size:12px}
+  .cgroup .lbl{color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.4px;font-size:10.5px}
+  .chip{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:20px;
+    border:1.5px solid var(--nodeStroke);cursor:pointer;user-select:none;font-size:12px;background:var(--node);font-weight:500}
+  .chip .sw{width:11px;height:11px;border-radius:3px;flex:none}
+  .chip .ic{font-size:11px}
+  .chip.off{opacity:.34;filter:grayscale(.7)}
+  .legend .chip{cursor:default}
+  .btn{padding:5px 12px;border-radius:7px;border:1px solid var(--nodeStroke);background:var(--node);color:var(--ink);cursor:pointer;font-size:12px;font-weight:500}
+  .btn.active{background:var(--das);color:#fff;border-color:var(--das)}
+  .modewrap{display:flex;gap:0;border:1px solid var(--nodeStroke);border-radius:8px;overflow:hidden}
+  .modewrap .btn{border:0;border-radius:0}
+  .summary{font-size:12.5px;line-height:1.55;background:var(--panel);border:1px solid var(--grid);
+    border-left:4px solid var(--das);border-radius:8px;padding:10px 14px;margin-bottom:12px}
+  .summary b{color:var(--ink)}
+  .summary .rm{color:var(--serious);font-weight:700}
+  svg{width:100%;height:auto;display:block;font-family:inherit}
+  .colhead{font-size:11px;font-weight:700;fill:var(--muted);text-transform:uppercase;letter-spacing:.6px}
+  .node text{fill:var(--ink);font-size:11.5px}
+  .node .tag{font-size:9px;font-weight:700;letter-spacing:.3px}
+  .node .rolebadge{font-size:8.5px;font-weight:700;letter-spacing:.3px}
+  .link{fill:none;stroke-linecap:round}
+  .node,.link{transition:opacity .18s}
+  .dimmed{opacity:.12!important}
+  .linkdimmed{opacity:.05!important}
+  .tooltip{position:fixed;pointer-events:none;z-index:20;max-width:270px;background:var(--node);
+    border:1px solid var(--nodeStroke);border-radius:8px;padding:9px 11px;font-size:12px;line-height:1.45;
+    color:var(--ink);box-shadow:0 6px 22px rgba(0,0,0,.18);opacity:0;transition:opacity .1s}
+  .tooltip .tt{font-weight:700;margin-bottom:2px}
+  .tooltip .tc{color:var(--muted);font-size:11px}
+  table{border-collapse:collapse;width:100%;font-size:12px;margin-top:6px}
+  th,td{border:1px solid var(--grid);padding:6px 9px;text-align:left;vertical-align:top}
+  th{background:var(--panel);font-weight:700}
+  .sevpill{display:inline-block;padding:1px 8px;border-radius:20px;color:#fff;font-size:10.5px;font-weight:700}
+  .hide{display:none}
+  .foot{font-size:11px;color:var(--muted);margin-top:14px;line-height:1.55}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>What if a drug hit only the <em>desirable</em> first-layer targets?</h1>
+  <p class="sub">Toggle between the two lead compounds as filed and an idealized, perfectly target-selective drug that binds only the therapeutic targets (SRC-family, MEK1/2, DDR1). Watch what disappears — and what stubbornly remains.</p>
+
+  <div class="controls">
+    <div class="cgroup"><span class="lbl">Scenario</span>
+      <div class="modewrap">
+        <button class="btn active" id="mAll">As filed — all targets</button>
+        <button class="btn" id="mIdeal">Idealized target-selective</button>
+      </div>
+    </div>
+    <div class="cgroup"><span class="lbl">Compound</span>
+      <span class="chip" data-drug="das"><span class="sw" style="background:var(--das)"></span>Dasatinib</span>
+      <span class="chip" data-drug="pd"><span class="sw" style="background:var(--pd)"></span>PD-0325901</span>
+    </div>
+    <div class="cgroup legend"><span class="lbl">Outcome</span>
+      <span class="chip"><span class="ic">▲</span><span class="sw" style="background:var(--serious)"></span>Serious</span>
+      <span class="chip"><span class="ic">◆</span><span class="sw" style="background:var(--moderate)"></span>Moderate</span>
+      <span class="chip"><span class="ic">●</span><span class="sw" style="background:var(--low)"></span>Low</span>
+      <span class="chip"><span class="ic">✓</span><span class="sw" style="background:var(--benefit)"></span>Intended benefit</span>
+    </div>
+    <div class="cgroup" style="margin-left:auto">
+      <button class="btn" id="viewBtn">Table</button>
+      <button class="btn" id="themeBtn">Dark</button>
+    </div>
+  </div>
+
+  <div class="summary" id="summary"></div>
+
+  <div id="netView"><svg id="svg" role="img" aria-label="Idealized selectivity network"></svg></div>
+  <div id="tableView" class="hide"></div>
+
+  <p class="foot">
+    Target roles: <b>therapeutic</b> = the intended disease-reversal mechanism (SRC-family, MEK1/2) or clearly anti-fibrotic (DDR1); <b>off-target</b> = binding with no therapeutic rationale here (KIT, BTK, LCK, TYK2/HCK, EPH, hERG); <b>double-edged</b> = PDGFR (anti-fibrotic but drives edema/effusion), dropped by an idealized desirable-only drug.
+    The idealized scenario assumes perfect <i>target</i> selectivity, not <i>tissue</i> selectivity — hover any surviving adverse effect to see why target selectivity can't remove it. Prepared 2026-07-28 · Ritschel Research.
+  </p>
+</div>
+<div class="tooltip" id="tip"></div>
+
+<script>
+const SEV={
+ serious:{c:'var(--serious)',ic:'▲',lab:'Serious',hex:'#c4392f'},
+ moderate:{c:'var(--moderate)',ic:'◆',lab:'Moderate',hex:'#dd9a1f'},
+ low:{c:'var(--low)',ic:'●',lab:'Low',hex:'#6b7480'},
+ benefit:{c:'var(--benefit)',ic:'✓',lab:'Intended benefit',hex:'#2f9e44'}};
+
+const N=[
+ {id:'das',layer:0,drug:'das',label:'Dasatinib',note:'SRC/ABL multi-kinase inhibitor — highly promiscuous.'},
+ {id:'pd',layer:0,drug:'pd',label:'PD-0325901',note:'Selective allosteric MEK1/2 inhibitor.'},
+ // targets, with role
+ {id:'SRC',layer:1,drug:'das',role:'ther',label:'SRC',note:'Therapeutic target (myofibroblast mechanotransduction) — but the SAME inhibition in platelets & pulmonary endothelium causes the worst toxicity.'},
+ {id:'DDR1',layer:1,drug:'das',role:'ther',label:'DDR1',note:'Collagen-activated RTK; pro-fibrotic. Inhibition is therapeutically desirable.'},
+ {id:'PDGFR',layer:1,drug:'das',role:'mixed',label:'PDGFRA/B',note:'Double-edged: anti-fibrotic AND drives edema/effusion. An idealized desirable-only drug cannot keep just the good arm, so it is dropped.'},
+ {id:'KIT',layer:1,drug:'das',role:'off',label:'KIT',note:'Off-target — no therapeutic rationale. Drives cytopenias.'},
+ {id:'BTK',layer:1,drug:'das',role:'off',label:'BTK',note:'Off-target — contributes to bleeding.'},
+ {id:'LCK',layer:1,drug:'das',role:'off',label:'LCK',note:'Off-target — T-cell signalling.'},
+ {id:'TYK2',layer:1,drug:'das',role:'off',label:'TYK2 / HCK',note:'Off-target — cytokine/immune.'},
+ {id:'EPH',layer:1,drug:'das',role:'off',label:'EPHB / EPHA',note:'Off-target — vascular.'},
+ {id:'hERG',layer:1,drug:'das',role:'off',label:'KCNH2 (hERG)',note:'Off-target cardiac channel — drives QT prolongation.'},
+ {id:'MEK',layer:1,drug:'pd',role:'ther',label:'MEK1/2',note:'THE therapeutic target. Every PD-0325901 adverse effect is on-target inhibition of this same pathway in normal tissue — so target selectivity removes none of them.'},
+ // systems
+ {id:'platelets',layer:2,drug:'das',label:'Platelets'},
+ {id:'pulmendo',layer:2,drug:'das',label:'Pulmonary endothelium'},
+ {id:'marrow',layer:2,drug:'das',label:'Bone marrow'},
+ {id:'vasc',layer:2,drug:'das',label:'Vasculature / lymphatics'},
+ {id:'immune',layer:2,drug:'das',label:'Immune cells'},
+ {id:'cardiac',layer:2,drug:'das',label:'Cardiac conduction'},
+ {id:'fibro',layer:2,drug:'das',label:'Fibrotic tissue (myofibroblast)',note:'The intended site of action — where SRC/MEK/DDR1 inhibition reverses fibrosis.'},
+ {id:'retina',layer:2,drug:'pd',label:'Retina (RPE)'},
+ {id:'skin',layer:2,drug:'pd',label:'Skin / follicles'},
+ {id:'heart',layer:2,drug:'pd',label:'Myocardium'},
+ {id:'muscle',layer:2,drug:'pd',label:'Skeletal muscle'},
+ {id:'gi',layer:2,drug:'pd',label:'GI tract'},
+ {id:'cns',layer:2,drug:'pd',label:'CNS'},
+ // effects
+ {id:'reversal',layer:3,drug:'das',sev:'benefit',label:'Fibrosis / myofibroblast reversal',note:'The intended therapeutic benefit — the reason the patent targets SRC & MEK.'},
+ {id:'bleed',layer:3,drug:'das',sev:'serious',label:'Bleeding / platelet dysfunction',onTarget:true,note:'Survives idealized selectivity: driven by SRC (a desirable target) acting in platelets — wrong tissue, not wrong target.'},
+ {id:'pah',layer:3,drug:'das',sev:'serious',label:'⚠ Pulmonary arterial hypertension',onTarget:true,note:'Survives idealized selectivity: SRC inhibition in pulmonary endothelium. Still a paradox for SSc-PAH even with a perfectly selective SRC drug.'},
+ {id:'effusion',layer:3,drug:'das',sev:'serious',label:'Pleural effusion',onTarget:true,note:'Partly survives: still fed by SRC via pulmonary endothelium (the vasculature/PDGFR arm is removed).'},
+ {id:'cytopenia',layer:3,drug:'das',sev:'serious',label:'Myelosuppression / cytopenias',note:'REMOVED by idealized selectivity — driven only by off-target KIT.'},
+ {id:'immsupp',layer:3,drug:'das',sev:'moderate',label:'Immunosuppression / infection',note:'REMOVED — driven only by off-target LCK/TYK2.'},
+ {id:'qt',layer:3,drug:'das',sev:'serious',label:'QT prolongation',note:'REMOVED — driven only by off-target hERG.'},
+ {id:'edema',layer:3,drug:'das',sev:'moderate',label:'Fluid retention / edema',note:'REMOVED — driven by double-edged PDGFR, which the idealized drug drops.'},
+ {id:'rvo',layer:3,drug:'pd',sev:'serious',label:'Retinal vein occlusion / serous retinopathy',onTarget:true,note:'Survives: on-target MEK inhibition in the retinal pigment epithelium.'},
+ {id:'rash',layer:3,drug:'pd',sev:'moderate',label:'Acneiform rash',onTarget:true,note:'Survives: on-target MEK in skin.'},
+ {id:'lvef',layer:3,drug:'pd',sev:'moderate',label:'↓ LVEF / cardiomyopathy',onTarget:true,note:'Survives: on-target MEK in myocardium.'},
+ {id:'ck',layer:3,drug:'pd',sev:'low',label:'CK elevation / myalgia',onTarget:true,note:'Survives: on-target MEK in muscle.'},
+ {id:'diarr',layer:3,drug:'pd',sev:'low',label:'Diarrhea / nausea',onTarget:true,note:'Survives: on-target MEK in gut.'},
+ {id:'neuro',layer:3,drug:'pd',sev:'moderate',label:'Neurologic AEs / blurred vision',onTarget:true,note:'Survives: on-target MEK / CNS.'},
+];
+const L=[
+ ['das','SRC'],['das','DDR1'],['das','PDGFR'],['das','KIT'],['das','BTK'],['das','LCK'],['das','TYK2'],['das','EPH'],['das','hERG'],
+ ['pd','MEK'],
+ ['SRC','platelets'],['SRC','pulmendo'],['SRC','fibro'],
+ ['BTK','platelets'],['KIT','marrow'],['LCK','immune'],['TYK2','immune'],
+ ['PDGFR','vasc'],['PDGFR','fibro'],['EPH','pulmendo'],['DDR1','fibro'],['hERG','cardiac'],
+ ['MEK','fibro'],['MEK','retina'],['MEK','skin'],['MEK','heart'],['MEK','muscle'],['MEK','gi'],['MEK','cns'],
+ ['platelets','bleed'],['pulmendo','pah'],['pulmendo','effusion'],['marrow','cytopenia'],
+ ['vasc','effusion'],['vasc','edema'],['immune','immsupp'],['cardiac','qt'],['fibro','reversal'],
+ ['retina','rvo'],['skin','rash'],['heart','lvef'],['muscle','ck'],['gi','diarr'],['cns','neuro'],
+];
+const nodeById={}; N.forEach(n=>nodeById[n.id]=n);
+const outAdj={},inAdj={}; N.forEach(n=>{outAdj[n.id]=[];inAdj[n.id]=[];});
+L.forEach(([a,b])=>{outAdj[a].push(b);inAdj[b].push(a);});
+function connected(id){const s=new Set([id]);let q=[id];
+  while(q.length){const c=q.pop();inAdj[c].forEach(p=>{if(!s.has(p)){s.add(p);q.push(p);}});}
+  q=[id];while(q.length){const c=q.pop();outAdj[c].forEach(p=>{if(!s.has(p)){s.add(p);q.push(p);}});}return s;}
+function linkSev(a,b){const B=nodeById[b];
+  if(B.layer===3)return B.sev;
+  if(B.layer===2){const sevs=[...new Set(outAdj[b].map(e=>nodeById[e].sev))];return sevs.length===1?sevs[0]:null;}
+  return null;}
+
+const svg=document.getElementById('svg'),NS='http://www.w3.org/2000/svg';
+const colX=[30,300,560,835],colW=[150,150,175,270];
+const TOP=54,GAPIN=11,GAPDRUG=26,LH=15,maxChars=[18,18,21,31];
+function wrap(t,m){const w=t.split(' '),ls=[];let c='';w.forEach(x=>{if((c+' '+x).trim().length>m){if(c)ls.push(c);c=x;}else c=(c+' '+x).trim();});if(c)ls.push(c);return ls;}
+let state={das:true,pd:true,mode:'all'},pinned=null;
+
+function idealVisibleTargets(id){ // in ideal mode, only therapeutic-role targets survive
+  return nodeById[id].role==='ther';
+}
+function build(){
+  const visible=new Set();
+  N.forEach(n=>{
+    if(!state[n.drug])return;
+    if(state.mode==='ideal'){
+      if(n.layer===1 && !idealVisibleTargets(n.id))return; // drop off & mixed targets
+    }
+    visible.add(n.id);
+  });
+  // prune systems/effects with no visible upstream (respecting removed targets)
+  let changed=true;
+  while(changed){changed=false;
+    N.forEach(n=>{
+      if(!visible.has(n.id))return;
+      if(n.layer===2||n.layer===3){
+        const up=inAdj[n.id].filter(p=>visible.has(p));
+        if(up.length===0){visible.delete(n.id);changed=true;}
+      }
+    });
+  }
+  // geometry
+  const geo={},colH=[];
+  for(let layer=0;layer<4;layer++){
+    const nodes=N.filter(n=>n.layer===layer&&visible.has(n.id));
+    let y=0,last=null;
+    nodes.forEach(n=>{
+      if(last!==null&&n.drug!==last)y+=GAPDRUG;else if(last!==null)y+=GAPIN;
+      const lines=wrap(n.label,maxChars[layer]);
+      let h=Math.max(34,lines.length*LH+16); if(n.layer===3)h+=12;
+      geo[n.id]={x:colX[layer],w:colW[layer],y,h,lines};y+=h;last=n.drug;
+    });
+    colH.push(y);
+  }
+  const H=Math.max(...colH,120);
+  for(let layer=0;layer<4;layer++){
+    const nodes=N.filter(n=>n.layer===layer&&visible.has(n.id));
+    const off=(H-colH[layer])/2;
+    nodes.forEach(n=>geo[n.id].y+=off+TOP);
+  }
+  const totalH=H+TOP+24,totalW=colX[3]+colW[3]+10;
+  svg.setAttribute('viewBox',`0 0 ${totalW} ${totalH}`);svg.innerHTML='';
+  ['COMPOUND','MOLECULAR TARGET','ORGAN / TISSUE','OUTCOME'].forEach((h,i)=>{
+    const t=document.createElementNS(NS,'text');t.setAttribute('x',colX[i]);t.setAttribute('y',30);
+    t.setAttribute('class','colhead');t.textContent=h;svg.appendChild(t);
+    const ln=document.createElementNS(NS,'line');ln.setAttribute('x1',colX[i]);ln.setAttribute('x2',colX[i]+colW[i]);
+    ln.setAttribute('y1',38);ln.setAttribute('y2',38);ln.setAttribute('stroke','var(--grid)');ln.setAttribute('stroke-width','1.5');svg.appendChild(ln);
+  });
+  const linkEls=[];
+  L.forEach(([a,b])=>{if(!visible.has(a)||!visible.has(b))return;
+    const ga=geo[a],gb=geo[b];const x1=ga.x+ga.w,y1=ga.y+ga.h/2,x2=gb.x,y2=gb.y+gb.h/2,mx=(x1+x2)/2;
+    const p=document.createElementNS(NS,'path');p.setAttribute('d',`M${x1},${y1} C${mx},${y1} ${mx},${y2} ${x2},${y2}`);
+    const sev=linkSev(a,b);const stroke=sev?SEV[sev].c:`var(--${nodeById[a].drug})`;
+    p.setAttribute('stroke',stroke);p.setAttribute('stroke-width',sev==='serious'?2.4:2);
+    p.setAttribute('class','link');p.setAttribute('opacity',sev?.62:.4);p.dataset.a=a;p.dataset.b=b;
+    svg.appendChild(p);linkEls.push(p);});
+  const nodeEls=[];
+  N.forEach(n=>{if(!visible.has(n.id))return;const g=geo[n.id];
+    const gEl=document.createElementNS(NS,'g');gEl.setAttribute('class','node');gEl.dataset.id=n.id;
+    const rect=document.createElementNS(NS,'rect');rect.setAttribute('x',g.x);rect.setAttribute('y',g.y);
+    rect.setAttribute('width',g.w);rect.setAttribute('height',g.h);rect.setAttribute('rx',7);
+    rect.setAttribute('fill','var(--node)');rect.setAttribute('stroke','var(--nodeStroke)');rect.setAttribute('stroke-width','1.2');gEl.appendChild(rect);
+    const acc=document.createElementNS(NS,'rect');acc.setAttribute('x',g.x);acc.setAttribute('y',g.y);
+    acc.setAttribute('width',4.5);acc.setAttribute('height',g.h);acc.setAttribute('rx',2);
+    acc.setAttribute('fill',n.layer===3?SEV[n.sev].c:`var(--${n.drug})`);gEl.appendChild(acc);
+    if(n.layer===3){const tint=document.createElementNS(NS,'rect');tint.setAttribute('x',g.x);tint.setAttribute('y',g.y);
+      tint.setAttribute('width',g.w);tint.setAttribute('height',g.h);tint.setAttribute('rx',7);
+      tint.setAttribute('fill',SEV[n.sev].c);tint.setAttribute('opacity',.10);gEl.appendChild(tint);}
+    const tx=g.x+13;let ty=g.y+(n.layer===3?16:g.h/2-(g.lines.length-1)*LH/2+4);
+    const t=document.createElementNS(NS,'text');t.setAttribute('x',tx);t.setAttribute('y',ty);
+    t.setAttribute('style',`font-weight:${n.layer===0?700:(n.layer===1?600:500)}`);
+    g.lines.forEach((ln,i)=>{const ts=document.createElementNS(NS,'tspan');ts.setAttribute('x',tx);ts.setAttribute('dy',i?LH:0);ts.textContent=ln;t.appendChild(ts);});
+    gEl.appendChild(t);
+    if(n.layer===3){const tag=document.createElementNS(NS,'text');tag.setAttribute('x',tx);tag.setAttribute('y',g.y+g.h-9);
+      tag.setAttribute('class','tag');tag.setAttribute('fill',SEV[n.sev].c);
+      let lab=SEV[n.sev].ic+' '+SEV[n.sev].lab.toUpperCase();
+      if(state.mode==='ideal'&&n.onTarget)lab+='  · UNAVOIDABLE';
+      tag.textContent=lab;gEl.appendChild(tag);}
+    if(n.layer===1){const rb=document.createElementNS(NS,'text');rb.setAttribute('x',g.x+g.w-9);rb.setAttribute('y',g.y+14);
+      rb.setAttribute('text-anchor','end');rb.setAttribute('class','rolebadge');
+      const rm={ther:['THERAPEUTIC','var(--benefit)'],mixed:['DOUBLE-EDGED','var(--moderate)'],off:['OFF-TARGET','var(--muted)']}[n.role];
+      rb.setAttribute('fill',rm[1]);rb.textContent=rm[0];gEl.appendChild(rb);}
+    svg.appendChild(gEl);nodeEls.push(gEl);
+    gEl.addEventListener('mouseenter',e=>{if(!pinned)hi(n.id);tip1(e,n);});
+    gEl.addEventListener('mousemove',tipm);
+    gEl.addEventListener('mouseleave',()=>{if(!pinned)clr();tiph();});
+    gEl.addEventListener('click',e=>{e.stopPropagation();if(pinned===n.id){pinned=null;clr();}else{pinned=n.id;hi(n.id);}});
+  });
+  svg.addEventListener('click',()=>{if(pinned){pinned=null;clr();}});
+  window._ne=nodeEls;window._le=linkEls;
+  updateSummary(visible);buildTable(visible);
+}
+function hi(id){const c=connected(id);
+  window._ne.forEach(g=>g.classList.toggle('dimmed',!c.has(g.dataset.id)));
+  window._le.forEach(p=>p.classList.toggle('linkdimmed',!(c.has(p.dataset.a)&&c.has(p.dataset.b))));}
+function clr(){(window._ne||[]).forEach(g=>g.classList.remove('dimmed'));(window._le||[]).forEach(p=>p.classList.remove('linkdimmed'));}
+const tip=document.getElementById('tip');
+function tip1(e,n){const cls=['Compound','Molecular target','Organ / tissue','Outcome'][n.layer];
+  let h=`<div class="tt">${n.label.replace('⚠ ','')}</div><div class="tc">${cls}${n.layer===1?' · '+({ther:'therapeutic',mixed:'double-edged',off:'off-target'})[n.role]:''}</div>`;
+  if(n.layer===3)h+=`<div style="color:${SEV[n.sev].hex};font-weight:700;font-size:11px;margin-top:3px">${SEV[n.sev].ic} ${SEV[n.sev].lab}</div>`;
+  if(n.note)h+=`<div style="margin-top:5px">${n.note}</div>`;tip.innerHTML=h;tip.style.opacity=1;tipm(e);}
+function tipm(e){const w=tip.offsetWidth,ht=tip.offsetHeight;let x=e.clientX+14,y=e.clientY+14;
+  if(x+w>innerWidth)x=e.clientX-w-14;if(y+ht>innerHeight)y=e.clientY-ht-14;tip.style.left=x+'px';tip.style.top=y+'px';}
+function tiph(){tip.style.opacity=0;}
+function updateSummary(visible){
+  const badAll=N.filter(n=>n.layer===3&&n.sev!=='benefit');
+  const badVis=badAll.filter(n=>visible.has(n.id)&&state[n.drug]);
+  const el=document.getElementById('summary');
+  if(state.mode==='all'){
+    el.innerHTML=`<b>As filed.</b> Both compounds hit every target — desirable and not. `+
+      `The network shows <b>${badVis.length} distinct adverse effects</b> plus the intended fibrosis-reversal benefit. `+
+      `Off-target genes (KIT, BTK, LCK, TYK2/HCK, EPH, hERG) and double-edged PDGFR each open their own route to harm. `+
+      `Switch to <b>Idealized target-selective</b> to prune everything but the therapeutic targets.`;
+  }else{
+    const removed=badAll.filter(n=>!visible.has(n.id));
+    const removedDas=removed.filter(n=>n.drug==='das').map(n=>n.label.replace('⚠ ','')).join(', ');
+    el.innerHTML=`<b>Idealized target-selective drug (SRC-family, MEK1/2, DDR1 only).</b> `+
+      `The left side collapses — six off-target genes and PDGFR vanish — yet only <span class="rm">${removed.length} of ${badAll.length} adverse effects are removed</span> `+
+      `(${removedDas}). The remaining <b>${badVis.length}</b> all survive because they arise from a <b>desirable target acting in the wrong tissue</b>: `+
+      `SRC still hits platelets &amp; pulmonary endothelium (bleeding, ⚠ PAH, pleural effusion), and every PD-0325901 effect is on-target MEK in normal tissue. `+
+      `<b>Target selectivity is not the lever — tissue/cell selectivity is.</b>`;
+  }
+}
+let tableOn=false;
+function buildTable(visible){
+  const rows=[];
+  N.filter(n=>n.layer===3&&visible.has(n.id)&&state[n.drug]).forEach(eff=>{
+    inAdj[eff.id].filter(s=>visible.has(s)).forEach(sys=>{
+      inAdj[sys].filter(t=>visible.has(t)).forEach(tgt=>{
+        inAdj[tgt].filter(c=>visible.has(c)).forEach(cmp=>{
+          rows.push([nodeById[cmp].label,nodeById[tgt].label,nodeById[sys].label,eff.label,eff.sev,
+            (state.mode==='ideal'&&eff.onTarget)?'on-target, wrong tissue':'']);});});});});
+  let h='<table><thead><tr><th>Compound</th><th>Target</th><th>Organ / tissue</th><th>Outcome</th><th>Type</th><th></th></tr></thead><tbody>';
+  rows.forEach(r=>{h+=`<tr><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td>
+    <td><span class="sevpill" style="background:${SEV[r[4]].hex}">${SEV[r[4]].lab}</span></td><td style="color:var(--muted)">${r[5]}</td></tr>`;});
+  h+='</tbody></table>';document.getElementById('tableView').innerHTML=h;
+}
+document.querySelectorAll('.chip[data-drug]').forEach(c=>c.addEventListener('click',()=>{
+  const d=c.dataset.drug;state[d]=!state[d];c.classList.toggle('off',!state[d]);pinned=null;build();}));
+document.getElementById('mAll').addEventListener('click',()=>{state.mode='all';pinned=null;
+  document.getElementById('mAll').classList.add('active');document.getElementById('mIdeal').classList.remove('active');build();});
+document.getElementById('mIdeal').addEventListener('click',()=>{state.mode='ideal';pinned=null;
+  document.getElementById('mIdeal').classList.add('active');document.getElementById('mAll').classList.remove('active');build();});
+document.getElementById('themeBtn').addEventListener('click',()=>{document.body.classList.toggle('dark');
+  document.getElementById('themeBtn').textContent=document.body.classList.contains('dark')?'Light':'Dark';});
+document.getElementById('viewBtn').addEventListener('click',()=>{tableOn=!tableOn;
+  document.getElementById('netView').classList.toggle('hide',tableOn);
+  document.getElementById('tableView').classList.toggle('hide',!tableOn);
+  document.getElementById('viewBtn').textContent=tableOn?'Network':'Table';});
+build();
+</script>
+</body>
+</html>

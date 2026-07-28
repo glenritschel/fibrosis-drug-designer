@@ -1,0 +1,16 @@
+# Manim build artifacts (keep only the final render in media/)
+manim/media/
+media/videos/
+media/images/
+media/Tex/
+media/texts/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# OS
+.DS_Store
+Thumbs.db
