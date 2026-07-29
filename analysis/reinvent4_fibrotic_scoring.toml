@@ -1,0 +1,169 @@
+# =====================================================================
+# REINVENT4 scoring specification
+# Profile: FIBROTIC-TARGETED anti-fibrotic candidate
+#   HIT   : SRC-family, MEK1/2, FAK (PTK2), ROCK2
+#   SPARE : KIT, BTK, and hERG (QT liability)
+#   plus drug-likeness / synthesizability / ADMET constraints
+#
+# Usage:  reinvent -l run.log staged_learning.toml
+#         (embed this [scoring] block in a REINVENT4 staged_learning config,
+#          or reference it from your run TOML)
+#
+# IMPORTANT — this is an ADAPT-ME TEMPLATE:
+#  * Component names/keys follow the REINVENT4 family schema; adjust to the
+#    exact version you install (`reinvent --version`).
+#  * Every "predictive" component references a QSAR model YOU must train first
+#    (e.g., with QSARtuna or Chemprop on ChEMBL pIC50 data for each target).
+#    The .pkl paths below are placeholders.
+#  * Validate generated molecules afterward with SwissTargetPrediction / SEA /
+#    ADMET-AI — the models here are only as good as their training data.
+# =====================================================================
+
+[scoring]
+type = "geometric_mean"   # ALL endpoints must be satisfied (no averaging away a failure)
+
+# ------------------------- ON-TARGETS (reward potency) -------------------------
+# Reward predicted pIC50 rising from ~6 (weak) to ~9 (strong).
+
+[[scoring.component]]
+[scoring.component.Qptuna]
+[[scoring.component.Qptuna.endpoint]]
+name = "SRC_family_pIC50"
+weight = 1.0
+params.model_file = "models/SRC_family_qsar.pkl"
+transform.type = "sigmoid"
+transform.low = 6.0
+transform.high = 9.0
+transform.k = 0.5
+
+[[scoring.component]]
+[scoring.component.Qptuna]
+[[scoring.component.Qptuna.endpoint]]
+name = "MEK12_pIC50"
+weight = 1.0
+params.model_file = "models/MEK12_qsar.pkl"
+transform.type = "sigmoid"
+transform.low = 6.0
+transform.high = 9.0
+transform.k = 0.5
+
+[[scoring.component]]
+[scoring.component.Qptuna]
+[[scoring.component.Qptuna.endpoint]]
+name = "FAK_pIC50"
+weight = 1.0
+params.model_file = "models/FAK_qsar.pkl"
+transform.type = "sigmoid"
+transform.low = 6.0
+transform.high = 9.0
+transform.k = 0.5
+
+[[scoring.component]]
+[scoring.component.Qptuna]
+[[scoring.component.Qptuna.endpoint]]
+name = "ROCK2_pIC50"
+weight = 1.0
+params.model_file = "models/ROCK2_qsar.pkl"
+transform.type = "sigmoid"
+transform.low = 6.0
+transform.high = 9.0
+transform.k = 0.5
+
+# ------------------------- ANTI-TARGETS (penalize potency) -------------------------
+# reverse_sigmoid: score ~1 when predicted activity is LOW, ~0 when HIGH.
+# hERG is weighted hardest — it was the serious QT node.
+
+[[scoring.component]]
+[scoring.component.Qptuna]
+[[scoring.component.Qptuna.endpoint]]
+name = "hERG_pIC50_avoid"
+weight = 1.5
+params.model_file = "models/hERG_qsar.pkl"
+transform.type = "reverse_sigmoid"
+transform.low = 5.0
+transform.high = 7.0
+transform.k = 0.5
+
+[[scoring.component]]
+[scoring.component.Qptuna]
+[[scoring.component.Qptuna.endpoint]]
+name = "KIT_pIC50_avoid"
+weight = 1.0
+params.model_file = "models/KIT_qsar.pkl"
+transform.type = "reverse_sigmoid"
+transform.low = 5.5
+transform.high = 7.5
+transform.k = 0.5
+
+[[scoring.component]]
+[scoring.component.Qptuna]
+[[scoring.component.Qptuna.endpoint]]
+name = "BTK_pIC50_avoid"
+weight = 1.0
+params.model_file = "models/BTK_qsar.pkl"
+transform.type = "reverse_sigmoid"
+transform.low = 5.5
+transform.high = 7.5
+transform.k = 0.5
+
+# ------------------------- DRUG-LIKENESS / SYNTHESIZABILITY -------------------------
+[[scoring.component]]
+[scoring.component.QED]
+[[scoring.component.QED.endpoint]]
+name = "QED"
+weight = 0.6
+
+[[scoring.component]]
+[scoring.component.SAScore]
+[[scoring.component.SAScore.endpoint]]
+name = "SA_score"
+weight = 0.6
+transform.type = "reverse_sigmoid"   # lower SA score = easier to make = better
+transform.low = 2.0
+transform.high = 6.0
+transform.k = 0.5
+
+[[scoring.component]]
+[scoring.component.MolecularWeight]
+[[scoring.component.MolecularWeight.endpoint]]
+name = "MW"
+weight = 0.4
+transform.type = "double_sigmoid"     # favor ~300-500 Da
+transform.low = 250.0
+transform.high = 500.0
+transform.coef_div = 500.0
+transform.coef_si = 20.0
+transform.coef_se = 20.0
+
+[[scoring.component]]
+[scoring.component.SlogP]
+[[scoring.component.SlogP.endpoint]]
+name = "SlogP"
+weight = 0.4
+transform.type = "double_sigmoid"     # favor logP ~1-4
+transform.low = 1.0
+transform.high = 4.0
+transform.coef_div = 4.0
+transform.coef_si = 20.0
+transform.coef_se = 20.0
+
+# ------------------------- STRUCTURAL ALERTS -------------------------
+[[scoring.component]]
+[scoring.component.custom_alerts]
+[[scoring.component.custom_alerts.endpoint]]
+name = "unwanted_substructures"
+# reject PAINS / reactive / toxicophore SMARTS (extend this list)
+params.smarts = [
+  "[N+](=O)[O-]",          # nitro
+  "C(=O)Cl",               # acyl halide
+  "[SX2H0][SX2H0]",        # disulfide
+  "N=[N+]=[N-]",           # azide
+]
+
+# ---------------------------------------------------------------------
+# Optional additions once the QSAR models are in place:
+#  * Docking component (AutoDock Vina / DockStream) into each kinase ATP
+#    pocket as a physics check on the QSAR scores.
+#  * CYP3A4 / clearance ADMET endpoints (co-formulation DDI awareness).
+#  * A selectivity-margin endpoint: on-target pIC50 minus max anti-target pIC50.
+# ---------------------------------------------------------------------

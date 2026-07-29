@@ -1,0 +1,74 @@
+{
+  "global_best": {
+    "hit": [
+      "SRC",
+      "MEK",
+      "FAK",
+      "ROCK2"
+    ],
+    "loc": "fibrotic",
+    "score": 100
+  },
+  "route_optima": {
+    "systemic": {
+      "hit": [
+        "FAK",
+        "ROCK2",
+        "PDGFR",
+        "DDR1"
+      ],
+      "eff": 95,
+      "n_aes": 6,
+      "n_serious": 0,
+      "score": 56,
+      "adverse_effects": {
+        "GI toxicity": "moderate",
+        "Hematologic": "low",
+        "Infection/immunosuppression": "moderate",
+        "Nausea/diarrhea": "low",
+        "Fluid retention/edema": "moderate",
+        "Mild epithelial effects": "low"
+      }
+    },
+    "lung": {
+      "hit": [
+        "MEK",
+        "FAK",
+        "ROCK2",
+        "PDGFR"
+      ],
+      "eff": 100,
+      "n_aes": 0,
+      "n_serious": 0,
+      "score": 100,
+      "adverse_effects": {}
+    },
+    "skin": {
+      "hit": [
+        "SRC",
+        "FAK",
+        "ROCK2",
+        "PDGFR"
+      ],
+      "eff": 100,
+      "n_aes": 0,
+      "n_serious": 0,
+      "score": 100,
+      "adverse_effects": {}
+    },
+    "fibrotic": {
+      "hit": [
+        "SRC",
+        "MEK",
+        "FAK",
+        "ROCK2"
+      ],
+      "eff": 100,
+      "n_aes": 0,
+      "n_serious": 0,
+      "score": 100,
+      "adverse_effects": {}
+    }
+  },
+  "n_designs_evaluated": 508
+}

@@ -1,0 +1,11 @@
+name,cid,MW,cLogP,TPSA,HBD,HBA,RotB,ArRings,QED,Ro5_viol,Veber_pass,n_alerts,hERG_flag
+saracatinib,10302451,542.0,3.94,90.4,1,10,8,3,0.452,1,True,0,True
+bosutinib,5328940,530.5,5.19,82.9,1,8,9,3,0.379,2,True,1,True
+mirdametinib,9826528,482.2,2.47,90.8,4,5,7,2,0.36,0,True,2,False
+selumetinib,10127622,457.7,3.53,88.4,3,5,6,3,0.389,0,True,2,False
+trametinib,11707110,615.4,3.94,107.1,2,5,5,4,0.331,1,True,1,False
+defactinib,25117126,510.5,2.4,142.1,3,9,8,3,0.416,1,False,0,False
+belumosudil,11950170,452.5,4.82,104.8,3,6,7,5,0.327,0,True,0,True
+zelasudil,155792249,437.5,3.97,100.5,3,5,7,4,0.406,0,True,0,True
+nintedanib,135423438,539.6,4.04,101.5,2,7,7,4,0.272,1,True,1,True
+imatinib,5291,493.6,4.59,86.3,2,7,7,4,0.389,0,True,0,True
